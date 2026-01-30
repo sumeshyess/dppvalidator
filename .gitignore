@@ -210,3 +210,10 @@ __marimo__/
 # Windsurf IDE
 .windsurf/
 docs/windsurf/
+
+# Internal planning documents (keep locally, exclude from repo)
+docs/IMPLEMENTATION_PLAN.md
+docs/IMPROVEMENT_ROADMAP.md
+docs/REFACTORING_PLAN.md
+docs/UNTTP_PLUGIN_PLAN.md
+docs/VC_WALLET_ROADMAP.md
