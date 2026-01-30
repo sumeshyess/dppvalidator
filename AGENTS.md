@@ -20,6 +20,7 @@
 src/dppvalidator/      # Main package
 ├── models/            # Pydantic models for DPP entities
 ├── validators/        # Validation logic
+├── verifier/          # Signature and credential verification
 ├── exporters/         # JSON-LD and other export formats
 ├── schemas/           # JSON Schema loading and caching
 ├── vocabularies/      # Controlled vocabulary loading
