@@ -47,8 +47,8 @@ uv add dppvalidator
 # Using pip
 pip install dppvalidator
 
-# With optional dependencies
-pip install dppvalidator[all]  # Includes jsonschema + httpx
+# With CLI extras (rich formatting)
+pip install dppvalidator[cli]
 ```
 
 **Requirements:** Python 3.10+

@@ -144,7 +144,7 @@ jobs:
       - name: Install from PyPI
         run: |
           for i in 1 2 3; do
-            pip install "dppvalidator[all]==${GITHUB_REF_NAME#v}" && break
+            pip install "dppvalidator[cli]==${GITHUB_REF_NAME#v}" && break
             echo "Attempt $i failed, retrying in 30s..."
             sleep 30
           done

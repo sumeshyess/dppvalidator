@@ -10,13 +10,14 @@ dppvalidator is the open-source compliance engine for EU Digital Product Passpor
 
 - Python 3.10+
 - Pydantic v2 for validation models
-- Optional: jsonschema, httpx, rich (CLI)
+- Included: httpx, jsonschema, pyld, cryptography, PyJWT
+- Optional: rich (CLI formatting via `[cli]` extra)
 
 ## Installation
 
 ```bash
-pip install dppvalidator          # Core only
-pip install dppvalidator[all]     # With all optional dependencies
+pip install dppvalidator          # Full functionality
+pip install dppvalidator[cli]     # With rich CLI formatting
 ```
 
 ## Architecture
