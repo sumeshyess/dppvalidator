@@ -90,7 +90,8 @@ jobs:
 
       - name: Verify export command
         run: |
-          dppvalidator export /tmp/test.json --output /tmp/out.jsonld
+          echo '{"@context":["https://www.w3.org/ns/credentials/v2"],"id":"https://example.com/dpp/1","type":["VerifiableCredential","DigitalProductPassport"],"issuer":{"id":"https://example.com","name":"Test"}}' > /tmp/valid_dpp.json
+          dppvalidator export /tmp/valid_dpp.json --output /tmp/out.jsonld
           test -f /tmp/out.jsonld
 
       - name: Install with all extras
