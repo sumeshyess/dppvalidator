@@ -221,7 +221,7 @@ engine = ValidationEngine(load_plugins=True)
 
 ## Built for Fashion & Textiles
 
-The EU's [Ecodesign for Sustainable Products Regulation (ESPR)](https://environment.ec.europa.eu/topics/circular-economy/ecodesign-sustainable-products-regulation_en) mandates Digital Product Passports for textiles starting 2027. dppvalidator helps fashion brands prepare now:
+The EU's [Ecodesign for Sustainable Products Regulation (ESPR)](https://commission.europa.eu/energy-climate-change-environment/standards-tools-and-labels/products-labelling-rules-and-requirements/ecodesign-sustainable-products-regulation_en) mandates Digital Product Passports for textiles starting 2027. dppvalidator helps fashion brands prepare now:
 
 | DPP Requirement                | How dppvalidator Helps                       |
 | ------------------------------ | -------------------------------------------- |
@@ -273,7 +273,7 @@ def validate_supplier_submission(dpp_json: dict) -> bool:
 ## Related Standards
 
 - [UNTP Digital Product Passport](https://untp.unece.org/docs/specification/DigitalProductPassport/) — UN/CEFACT specification
-- [EU ESPR Regulation](https://environment.ec.europa.eu/topics/circular-economy/ecodesign-sustainable-products-regulation_en) — Ecodesign for Sustainable Products
+- [EU ESPR Regulation](https://commission.europa.eu/energy-climate-change-environment/standards-tools-and-labels/products-labelling-rules-and-requirements/ecodesign-sustainable-products-regulation_en) — Ecodesign for Sustainable Products
 - [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) — Credential format standard
 
 > ⚠️ **Note on UNTP Specification:** The UNTP Digital Product Passport specification is under active development and not yet ready for production implementation. We track the latest maintained releases and will update dppvalidator as the specification stabilizes. See the [UNTP releases page](https://untp.unece.org/docs/specification/DigitalProductPassport/) for current status.
