@@ -6,11 +6,12 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/dppvalidator/" style="text-decoration: none;"><img src="https://img.shields.io/pypi/v/dppvalidator.svg" alt="PyPI version"></a>
-  <a href="https://pypi.org/project/dppvalidator/" style="text-decoration: none;"><img src="https://img.shields.io/pypi/pyversions/dppvalidator.svg" alt="Python versions"></a>
-  <a href="https://github.com/artiso-ai/dppvalidator/blob/main/LICENSE" style="text-decoration: none;"><img src="https://img.shields.io/github/license/artiso-ai/dppvalidator.svg" alt="License"></a>
-  <a href="https://github.com/artiso-ai/dppvalidator/actions/workflows/ci.yml" style="text-decoration: none;"><img src="https://github.com/artiso-ai/dppvalidator/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://artiso-ai.github.io/dppvalidator/" style="text-decoration: none;"><img src="https://img.shields.io/badge/docs-mkdocs-blue.svg" alt="Documentation"></a>
+  <a href="https://pypi.org/project/dppvalidator/" style="text-decoration: none;"><img src="https://img.shields.io/pypi/v/dppvalidator?style=flat&logo=pypi&logoColor=white" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/dppvalidator/" style="text-decoration: none;"><img src="https://img.shields.io/pypi/pyversions/dppvalidator?style=flat&logo=python&logoColor=white" alt="Python versions"></a>
+  <a href="https://pypi.org/project/dppvalidator/" style="text-decoration: none;"><img src="https://img.shields.io/pypi/dm/dppvalidator?style=flat&logo=pypi&logoColor=white" alt="Downloads"></a>
+  <a href="https://github.com/artiso-ai/dppvalidator/blob/main/LICENSE" style="text-decoration: none;"><img src="https://img.shields.io/github/license/artiso-ai/dppvalidator?style=flat" alt="License"></a>
+  <a href="https://github.com/artiso-ai/dppvalidator/actions/workflows/ci.yml" style="text-decoration: none;"><img src="https://github.com/artiso-ai/dppvalidator/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://artiso-ai.github.io/dppvalidator/" style="text-decoration: none;"><img src="https://img.shields.io/badge/docs-mkdocs-blue?style=flat&logo=materialformkdocs&logoColor=white" alt="Documentation"></a>
 </p>
 
 <p align="center">
