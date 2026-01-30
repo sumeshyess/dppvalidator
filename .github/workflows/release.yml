@@ -69,11 +69,18 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Wait for TestPyPI propagation
+        run: sleep 30
+
       - name: Install base package from TestPyPI
         run: |
-          pip install --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple/ \
-            dppvalidator==${GITHUB_REF_NAME#v}
+          for i in 1 2 3 4 5; do
+            pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ \
+              dppvalidator==${GITHUB_REF_NAME#v} && break
+            echo "Attempt $i failed, retrying in 15s..."
+            sleep 15
+          done
 
       - name: Verify import
         run: |
@@ -96,9 +103,13 @@ jobs:
 
       - name: Install with CLI extra
         run: |
-          pip install --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple/ \
-            "dppvalidator[cli]==${GITHUB_REF_NAME#v}"
+          for i in 1 2 3; do
+            pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ \
+              "dppvalidator[cli]==${GITHUB_REF_NAME#v}" && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
 
       - name: Verify CLI optional import
         run: python -c "import rich; print('rich OK')"
