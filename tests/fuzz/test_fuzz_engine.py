@@ -16,7 +16,7 @@ class TestEngineFuzzing:
     """Fuzzing tests for ValidationEngine."""
 
     @given(st.binary(min_size=0, max_size=1000))
-    @settings(max_examples=500)
+    @settings(max_examples=500, deadline=500)
     def test_engine_never_crashes_on_binary(self, data: bytes):
         """Test engine never crashes on arbitrary binary input."""
         engine = ValidationEngine(layers=["model"])

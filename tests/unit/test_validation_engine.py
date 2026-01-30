@@ -389,10 +389,15 @@ class TestPhase2Features:
 
     def test_engine_strict_mode_passed_to_schema_validator(self):
         """Test ValidationEngine passes strict_mode to SchemaValidator."""
-        engine = ValidationEngine(strict_mode=True, layers=["schema"])
+        # Use explicit version to ensure validators are initialized immediately
+        engine = ValidationEngine(schema_version="0.6.1", strict_mode=True, layers=["schema"])
+        assert engine._schema_validator is not None
         assert engine._schema_validator.strict is True
 
-        engine_normal = ValidationEngine(strict_mode=False, layers=["schema"])
+        engine_normal = ValidationEngine(
+            schema_version="0.6.1", strict_mode=False, layers=["schema"]
+        )
+        assert engine_normal._schema_validator is not None
         assert engine_normal._schema_validator.strict is False
 
     def test_engine_validate_vocabularies_initializes_loader(self):

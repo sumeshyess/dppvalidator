@@ -1,46 +1,83 @@
 # Validation Guide
 
-dppvalidator uses a three-layer validation approach to ensure Digital Product Passports are valid and meaningful.
+dppvalidator uses a five-layer validation architecture to ensure Digital Product
+Passports are valid, semantically meaningful, and cryptographically verifiable.
 
-## Three-Layer Validation
+## Quick Start
+
+```python
+from dppvalidator import ValidationEngine
+
+# Create engine with auto-detection (default)
+engine = ValidationEngine()
+
+# Validate a DPP
+result = engine.validate(dpp_data)
+
+if result.valid:
+    print("Passport is valid!")
+else:
+    for error in result.errors:
+        print(f"[{error.code}] {error.path}: {error.message}")
+```
+
+## Schema Auto-Detection
+
+The engine automatically detects the schema version from your document:
+
+```python
+# Auto-detection is the default
+engine = ValidationEngine()  # schema_version="auto"
+
+# Or specify explicitly for deterministic behavior
+engine = ValidationEngine(schema_version="0.6.1")
+```
+
+Detection checks (in order):
+
+1. `$schema` URL pattern
+1. `@context` URLs
+1. `type` array presence
+1. Fallback to default version
+
+## Validation Layers
 
 ### Layer 1: Schema Validation
 
-The first layer validates the JSON structure against the UNTP DPP JSON Schema.
+Validates JSON structure against the UNTP DPP JSON Schema.
 
 ```python
-from dppvalidator.validators import ValidationEngine
-
 engine = ValidationEngine(layers=["schema"])
 result = engine.validate(data)
 ```
 
-**What it checks:**
-
-- Required fields are present
-- Field types are correct
-- String formats (URIs, dates)
-- Enum values
-
 ### Layer 2: Model Validation
 
-The second layer validates data against Pydantic models, providing stricter type checking and coercion.
+Validates data against Pydantic models with stricter type checking.
 
 ```python
 engine = ValidationEngine(layers=["model"])
 result = engine.validate(data)
 ```
 
+### Layer 3: JSON-LD Semantic Validation
+
+Validates JSON-LD semantics using PyLD expansion algorithm.
+
+```python
+engine = ValidationEngine(validate_jsonld=True)
+result = engine.validate(data)
+```
+
 **What it checks:**
 
-- Pydantic model constraints
-- URL validation
-- Date parsing
-- Custom validators
+- `@context` is present and valid
+- All terms resolve during expansion
+- Custom terms use proper namespacing
 
-### Layer 3: Semantic Validation
+### Layer 4: Business Logic Validation
 
-The third layer checks business rules and cross-field relationships.
+Validates business rules and vocabulary references.
 
 ```python
 engine = ValidationEngine(layers=["semantic"])
@@ -49,21 +86,47 @@ result = engine.validate(data)
 
 **What it checks:**
 
-- Vocabulary values (country codes, unit codes)
-- Date relationships (valid_from < valid_until)
-- Identifier formats
-- Cross-reference consistency
+- Vocabulary values (ISO country codes, UN/CEFACT unit codes)
+- Material codes (UNECE Rec 46)
+- GTIN checksums (GS1 standard)
+- Date relationships
 
-## Using All Layers
+### Layer 5: Signature Verification
 
-By default, all layers are enabled:
+Verifies Verifiable Credential signatures.
 
 ```python
-engine = ValidationEngine()  # All layers enabled
+engine = ValidationEngine(verify_signatures=True)
 result = engine.validate(data)
 
-# Or explicitly:
-engine = ValidationEngine(layers=["schema", "model", "semantic"])
+if result.signature_valid:
+    print(f"Signed by: {result.issuer_did}")
+    print(f"Method: {result.verification_method}")
+```
+
+**Supported:**
+
+- DID methods: `did:web`, `did:key`
+- Algorithms: Ed25519, ES256, ES384
+- Proof types: Ed25519Signature2020, DataIntegrityProof, JsonWebSignature2020
+
+## Deep Validation
+
+Validate entire supply chains by crawling linked documents:
+
+```python
+result = await engine.validate_deep(
+    dpp_data,
+    max_depth=3,
+    follow_links=["credentialSubject.traceabilityEvents"],
+    timeout=30.0,
+    auth_header={"Authorization": "Bearer token..."},
+)
+
+print(f"Total documents: {result.total_documents}")
+print(f"Max depth reached: {result.max_depth_reached}")
+print(f"Cycle detected: {result.cycle_detected}")
+print(f"All valid: {result.valid}")
 ```
 
 ## Validation Results
@@ -83,29 +146,71 @@ for error in result.errors:
 for warning in result.warnings:
     print(f"Warning: {warning.message}")
 
-# Get validation time
+# Signature status (when verify_signatures=True)
+if result.signature_valid is not None:
+    print(f"Signature valid: {result.signature_valid}")
+    print(f"Issuer: {result.issuer_did}")
+
+# Validation time
 print(f"Validated in {result.validation_time_ms:.2f}ms")
 ```
 
 ## Error Codes
 
-| Code   | Layer    | Description               |
-| ------ | -------- | ------------------------- |
-| SCH001 | Schema   | Required field missing    |
-| SCH002 | Schema   | Invalid type              |
-| MOD001 | Model    | Pydantic validation error |
-| SEM001 | Semantic | Invalid vocabulary value  |
-| SEM002 | Semantic | Invalid date relationship |
+| Prefix | Layer      | Description                    |
+| ------ | ---------- | ------------------------------ |
+| SCH    | Schema     | JSON Schema validation errors  |
+| MOD    | Model      | Pydantic validation errors     |
+| JLD    | JSON-LD    | Context/term resolution errors |
+| SEM    | Semantic   | Business rule violations       |
+| VOC    | Vocabulary | Code list validation errors    |
+| SIG    | Signature  | Credential verification errors |
 
-## Strict Mode
+## Code List Validation
 
-Enable strict mode for additional schema checks:
+Validate identifiers and codes:
 
 ```python
-engine = ValidationEngine(strict_mode=True)
+from dppvalidator.vocabularies import (
+    validate_gtin,
+    is_valid_material_code,
+    is_valid_hs_code,
+    is_valid_gs1_digital_link,
+)
+
+# GTIN checksum validation
+validate_gtin("5901234123457")  # True
+
+# Material codes (UNECE Rec 46)
+is_valid_material_code("COTTON")  # True
+is_valid_material_code("RECYCLED_POLYESTER")  # True
+
+# GS1 Digital Link
+is_valid_gs1_digital_link("https://id.gs1.org/01/5901234123457")  # True
+```
+
+## Full Validation Example
+
+```python
+from dppvalidator import ValidationEngine
+
+# Enable all validation features
+engine = ValidationEngine(
+    validate_jsonld=True,
+    verify_signatures=True,
+    strict_mode=True,
+)
+
+result = engine.validate(dpp_data)
+
+print(f"Valid: {result.valid}")
+print(f"Errors: {len(result.errors)}")
+print(f"Warnings: {len(result.warnings)}")
+print(f"Signature valid: {result.signature_valid}")
 ```
 
 ## Next Steps
 
 - [JSON-LD Export](jsonld.md) — Export validated passports
+- [Validation Layers](../concepts/validation-layers.md) — Architecture deep dive
 - [API Reference](../reference/api/validators.md) — Full ValidationEngine API

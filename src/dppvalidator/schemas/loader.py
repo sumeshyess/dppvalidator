@@ -7,20 +7,14 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 from dppvalidator.logging import get_logger
 from dppvalidator.schemas.registry import (
     DEFAULT_SCHEMA_VERSION,
     SchemaRegistry,
     SchemaVersion,
 )
-
-try:
-    import httpx
-
-    HAS_HTTPX = True
-except ImportError:
-    httpx = None  # type: ignore[assignment]
-    HAS_HTTPX = False
 
 logger = get_logger(__name__)
 
@@ -124,10 +118,6 @@ class SchemaLoader:
 
     def _fetch_remote(self, schema_def: SchemaVersion) -> dict[str, Any] | None:
         """Fetch schema from remote URL and cache."""
-        if not HAS_HTTPX:
-            logger.warning("httpx not installed, cannot fetch remote schema")
-            return None
-
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
                 response = client.get(schema_def.url, follow_redirects=True)
@@ -183,9 +173,6 @@ class SchemaLoader:
         out_dir = output_dir or Path.cwd()
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / f"untp-dpp-schema-{version}.json"
-
-        if not HAS_HTTPX:
-            raise RuntimeError("httpx required for download. Install with: pip install httpx")
 
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:

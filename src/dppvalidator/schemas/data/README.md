@@ -8,7 +8,7 @@ This directory contains bundled JSON Schema files for the UN Transparency Protoc
 Schemas are sourced from the official UN/CEFACT vocabulary repository:
 
 - **URL**: <https://test.uncefact.org/vocabulary/untp/dpp/>
-- **Specification**: <https://uncefact.github.io/spec-untp/docs/specification/DigitalProductPassport>
+- **Specification**: <https://untp.unece.org/specification/DigitalProductPassport>
 
 ## Included Schemas
 
@@ -19,7 +19,7 @@ Schemas are sourced from the official UN/CEFACT vocabulary repository:
 ## License
 
 The UNTP specification and schemas are published by UN/CEFACT under
-open governance. See the [UNTP specification](https://uncefact.github.io/spec-untp/)
+open governance. See the [UNTP specification](https://untp.unece.org/)
 for licensing details.
 
 ## Updates

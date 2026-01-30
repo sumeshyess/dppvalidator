@@ -268,31 +268,6 @@ class TestSchemaValidatorWithJsonschema:
             assert SCHEMA_ERROR_CODES[validator].startswith("SCH")
 
 
-class TestSchemaValidatorWithoutJsonschema:
-    """Tests for SchemaValidator when jsonschema is not available."""
-
-    def test_validate_without_jsonschema_returns_warning(self, monkeypatch):
-        """Test validation returns warning when jsonschema not installed."""
-        from dppvalidator.validators import schema as schema_module
-
-        monkeypatch.setattr(schema_module, "HAS_JSONSCHEMA", False)
-
-        validator = SchemaValidator()
-        result = validator.validate({"test": "data"})
-        assert result.valid is True
-        assert len(result.warnings) == 1
-        assert "jsonschema not installed" in result.warnings[0].message
-
-    def test_get_validator_without_jsonschema(self, monkeypatch):
-        """Test _get_validator returns None when jsonschema not installed."""
-        from dppvalidator.validators import schema as schema_module
-
-        monkeypatch.setattr(schema_module, "HAS_JSONSCHEMA", False)
-
-        validator = SchemaValidator()
-        assert validator._get_validator() is None
-
-
 class TestSchemaValidatorWithJsonSchema:
     """Tests for SchemaValidator with jsonschema library."""
 

@@ -1,6 +1,6 @@
 [project]
 name = "dppvalidator"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python library for validating Digital Product Passports (DPP) according to EU ESPR regulations and CIRPASS/UNECE ontologies"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -32,17 +32,21 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
     "Typing :: Typed",
 ]
-dependencies = ["pydantic>=2.12.5"]
+dependencies = [
+    "pydantic>=2.12.5",
+    "httpx>=0.28.0",
+    "jsonschema>=4.23.0",
+    "pyld>=2.0.4",
+    "cryptography>=43.0.0",
+    "PyJWT>=2.9.0",
+]
 
 [project.scripts]
 dppvalidator = "dppvalidator.cli:cli"
 dppvalidator-precommit = "dppvalidator.cli.commands.precommit:main"
 
 [project.optional-dependencies]
-http = ["httpx>=0.28.0"]
-jsonschema = ["jsonschema>=4.23.0"]
 cli = ["rich>=13.0.0"]
-all = ["httpx>=0.28.0", "jsonschema>=4.23.0", "rich>=13.0.0"]
 
 [project.urls]
 Homepage = "https://github.com/artiso-ai/dppvalidator"

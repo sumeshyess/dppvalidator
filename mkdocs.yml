@@ -97,9 +97,28 @@ nav:
           - Plugins: reference/api/plugins.md
   - Concepts:
       - UNTP DPP Schema: concepts/untp-schema.md
-      - Three-Layer Validation: concepts/validation-layers.md
+      - Five-Layer Validation: concepts/validation-layers.md
   - Contributing:
       - Development Setup: contributing/development-setup.md
       - Code Style: contributing/code-style.md
       - Testing: contributing/testing.md
+  - Errors:
+      - Overview: errors/index.md
+      - JSON-LD Errors:
+          - JLD001 - Missing Context: errors/JLD001.md
+          - JLD002 - Undefined Terms: errors/JLD002.md
+          - JLD003 - Namespace Pollution: errors/JLD003.md
+          - JLD004 - Context Resolution: errors/JLD004.md
+      - Semantic Errors:
+          - SEM001 - Mass Fraction Sum: errors/SEM001.md
+          - SEM002 - Validity Date Order: errors/SEM002.md
+          - SEM003 - Hazardous Material Safety: errors/SEM003.md
+          - SEM004 - Circularity Consistency: errors/SEM004.md
+          - SEM005 - Missing Conformity Claims: errors/SEM005.md
+          - SEM006 - Item-Level Serial Number: errors/SEM006.md
+          - SEM007 - Operational Scope: errors/SEM007.md
+      - Vocabulary Errors:
+          - VOC003 - UNECE Material Code: errors/VOC003.md
+          - VOC004 - HS Code Validation: errors/VOC004.md
+          - VOC005 - GTIN Checksum: errors/VOC005.md
   - Changelog: changelog.md

@@ -125,6 +125,30 @@ def _output_result(result: Any, fmt: str, input_path: str, console: Console) -> 
     _output_text(result, input_path, console)
 
 
+def _format_issue(issue: Any, console: Console) -> None:
+    """Format and print a single validation issue with optional fields."""
+    console.print(f"  [{issue.code}] {issue.path}: {issue.message}")
+
+    if getattr(issue, "did_you_mean", None):
+        suggestions = ", ".join(f'"{v}"' for v in issue.did_you_mean)
+        console.print(f"    Did you mean: {suggestions}?", style="cyan")
+
+    if issue.suggestion:
+        console.print(f"    💡 {issue.suggestion}", style="dim")
+
+    if issue.docs_url:
+        console.print(f"    📖 {issue.docs_url}", style="dim blue")
+
+
+def _print_issues(issues: list[Any], label: str, style: str, console: Console) -> None:
+    """Print a section of issues with header."""
+    if not issues:
+        return
+    console.print(f"\n[bold {style}]{label} ({len(issues)}):[/bold {style}]", style=style)
+    for issue in issues:
+        _format_issue(issue, console)
+
+
 def _output_text(result: Any, input_path: str, console: Console) -> None:
     """Output result as text."""
     if result.valid:
@@ -134,28 +158,8 @@ def _output_text(result: Any, input_path: str, console: Console) -> None:
 
     console.print(f"Schema version: {result.schema_version}")
 
-    if result.errors:
-        console.print(f"\n[bold red]Errors ({len(result.errors)}):[/bold red]", style="red")
-        for err in result.errors:
-            console.print(f"  [{err.code}] {err.path}: {err.message}")
-            if err.did_you_mean:
-                suggestions = ", ".join(f'"{v}"' for v in err.did_you_mean)
-                console.print(f"    Did you mean: {suggestions}?", style="cyan")
-            if err.suggestion:
-                console.print(f"    💡 {err.suggestion}", style="dim")
-            if err.docs_url:
-                console.print(f"    📖 {err.docs_url}", style="dim blue")
-
-    if result.warnings:
-        console.print(
-            f"\n[bold yellow]Warnings ({len(result.warnings)}):[/bold yellow]", style="yellow"
-        )
-        for warn in result.warnings:
-            console.print(f"  [{warn.code}] {warn.path}: {warn.message}")
-            if warn.suggestion:
-                console.print(f"    💡 {warn.suggestion}", style="dim")
-            if warn.docs_url:
-                console.print(f"    📖 {warn.docs_url}", style="dim blue")
+    _print_issues(result.errors, "Errors", "red", console)
+    _print_issues(result.warnings, "Warnings", "yellow", console)
 
     if result.info:
         console.print(f"\nInfo ({len(result.info)}):")

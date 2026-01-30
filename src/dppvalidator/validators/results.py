@@ -30,7 +30,7 @@ class ValidationError:
     path: str
     message: str
     code: str
-    layer: Literal["schema", "model", "semantic", "plugin", "vocabulary"]
+    layer: Literal["schema", "model", "semantic", "jsonld", "plugin", "vocabulary"]
     severity: Literal["error", "warning", "info"] = "error"
     suggestion: str | None = None
     docs_url: str | None = None
@@ -84,6 +84,10 @@ class ValidationResult:
     passport: DigitalProductPassport | None = None
     parse_time_ms: float = 0.0
     validation_time_ms: float = 0.0
+    # Signature verification fields
+    signature_valid: bool | None = None
+    issuer_did: str | None = None
+    verification_method: str | None = None
 
     @property
     def error_count(self) -> int:
@@ -102,7 +106,7 @@ class ValidationResult:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return {
+        result = {
             "valid": self.valid,
             "errors": [e.to_dict() for e in self.errors],
             "warnings": [w.to_dict() for w in self.warnings],
@@ -112,6 +116,13 @@ class ValidationResult:
             "parse_time_ms": self.parse_time_ms,
             "validation_time_ms": self.validation_time_ms,
         }
+        if self.signature_valid is not None:
+            result["signature_valid"] = self.signature_valid
+        if self.issuer_did:
+            result["issuer_did"] = self.issuer_did
+        if self.verification_method:
+            result["verification_method"] = self.verification_method
+        return result
 
     def to_json(self, *, indent: int | None = 2) -> str:
         """Serialize result to JSON string."""

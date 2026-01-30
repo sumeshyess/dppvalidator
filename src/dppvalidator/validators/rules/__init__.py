@@ -4,8 +4,11 @@ from dppvalidator.validators.rules.base import (
     CircularityContentRule,
     ConformityClaimRule,
     GranularitySerialNumberRule,
+    GTINChecksumRule,
     HazardousMaterialRule,
+    HSCodeRule,
     MassFractionSumRule,
+    MaterialCodeRule,
     OperationalScopeRule,
     ValidityDateRule,
 )
@@ -18,6 +21,9 @@ ALL_RULES = [
     ConformityClaimRule(),
     GranularitySerialNumberRule(),
     OperationalScopeRule(),
+    MaterialCodeRule(),
+    HSCodeRule(),
+    GTINChecksumRule(),
 ]
 
 __all__ = [
@@ -29,4 +35,7 @@ __all__ = [
     "ConformityClaimRule",
     "GranularitySerialNumberRule",
     "OperationalScopeRule",
+    "MaterialCodeRule",
+    "HSCodeRule",
+    "GTINChecksumRule",
 ]

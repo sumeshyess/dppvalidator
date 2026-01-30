@@ -9,18 +9,9 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator
+
 from dppvalidator.validators.results import ValidationError, ValidationResult
-
-try:
-    from jsonschema import Draft202012Validator
-    from jsonschema import ValidationError as JsonSchemaError
-
-    HAS_JSONSCHEMA = True
-except ImportError:
-    HAS_JSONSCHEMA = False
-    Draft202012Validator = None  # type: ignore[misc, assignment]
-    JsonSchemaError = Exception  # type: ignore[misc, assignment]
-
 
 # Stable error code mapping based on JSON Schema validator type
 SCHEMA_ERROR_CODES: dict[str, str] = {
@@ -143,9 +134,6 @@ class SchemaValidator:
 
     def _get_validator(self) -> Any:
         """Get or create the JSON Schema validator."""
-        if not HAS_JSONSCHEMA:
-            return None
-
         if self._validator is None:
             schema = self._load_schema()
             if schema:
@@ -163,22 +151,6 @@ class SchemaValidator:
             ValidationResult with any schema violations
         """
         start_time = time.perf_counter()
-
-        if not HAS_JSONSCHEMA:
-            return ValidationResult(
-                valid=True,
-                warnings=[
-                    ValidationError(
-                        path="$",
-                        message="jsonschema not installed, skipping schema validation",
-                        code="SCH000",
-                        layer="schema",
-                        severity="warning",
-                    )
-                ],
-                schema_version=self.schema_version,
-                validation_time_ms=(time.perf_counter() - start_time) * 1000,
-            )
 
         validator = self._get_validator()
         if validator is None:
