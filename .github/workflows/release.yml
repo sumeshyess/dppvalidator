@@ -83,10 +83,10 @@ jobs:
       - name: Verify CLI entry point
         run: dppvalidator --version
 
-      - name: Verify basic validation
+      - name: Verify CLI runs (invalid data returns exit 1, which is correct)
         run: |
           echo '{"id":"https://x.com","issuer":{"id":"https://x.com","name":"T"}}' > /tmp/test.json
-          dppvalidator validate /tmp/test.json --format json
+          dppvalidator validate /tmp/test.json --format json || test $? -eq 1
 
       - name: Verify export command
         run: |
