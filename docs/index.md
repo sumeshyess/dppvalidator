@@ -16,7 +16,7 @@ ______________________________________________________________________
 
 ## Features
 
-- :octicons-check-circle-16:{ .text-green } **Three-Layer Validation** — Schema, Model, and Semantic validation
+- :octicons-check-circle-16:{ .text-green } **Five-Layer Validation** — Schema, Model, JSON-LD, Semantic, and Cryptographic validation
 - :octicons-package-16: **UNTP DPP Schema Support** — Built-in support for UNTP DPP 0.6.1
 - :octicons-rocket-16: **High Performance** — 80,000+ validations per second
 - :octicons-plug-16: **Plugin System** — Extensible with custom validators and exporters

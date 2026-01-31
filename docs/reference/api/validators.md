@@ -4,7 +4,7 @@ Validation engine and result types for DPP validation.
 
 ## ValidationEngine
 
-The main validation engine supporting three-layer validation.
+The main validation engine supporting five-layer validation.
 
 ::: dppvalidator.validators.ValidationEngine
 options:
@@ -59,11 +59,13 @@ print(f"Validation time: {result.validation_time_ms:.2f}ms")
 
 ## Validation Layers
 
-| Layer    | Description               |
-| -------- | ------------------------- |
-| schema   | JSON Schema validation    |
-| model    | Pydantic model validation |
-| semantic | Business rule validation  |
+| Layer    | Description                |
+| -------- | -------------------------- |
+| schema   | JSON Schema validation     |
+| model    | Pydantic model validation  |
+| jsonld   | JSON-LD context validation |
+| semantic | Business rule validation   |
+| crypto   | Signature verification     |
 
 ## Error Codes
 
@@ -72,5 +74,7 @@ print(f"Validation time: {result.validation_time_ms:.2f}ms")
 | SCH001 | schema   | Required field missing   |
 | SCH002 | schema   | Invalid type             |
 | MOD001 | model    | Model validation error   |
+| JLD001 | jsonld   | Invalid context          |
 | SEM001 | semantic | Invalid vocabulary value |
 | SEM002 | semantic | Invalid date range       |
+| SIG001 | crypto   | Invalid signature        |

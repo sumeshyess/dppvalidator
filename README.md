@@ -31,13 +31,13 @@ ______________________________________________________________________
 
 ## Why dppvalidator?
 
-| Challenge                         | Solution                                                                        |
-| --------------------------------- | ------------------------------------------------------------------------------- |
-| Complex JSON Schema validation    | **Three-layer validation** catches errors at schema, model, and semantic levels |
-| Evolving UNTP specifications      | **Built-in schema support** for UNTP DPP 0.6.1 with easy version switching      |
-| Integration with existing systems | **CLI + Python API** for pipelines, CI/CD, and application integration          |
-| Custom business rules             | **Plugin system** for domain-specific validators and exporters                  |
-| Interoperability requirements     | **JSON-LD export** for W3C Verifiable Credentials compliance                    |
+| Challenge                         | Solution                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Complex JSON Schema validation    | **Five-layer validation** catches errors at schema, model, JSON-LD, semantic, and cryptographic levels |
+| Evolving UNTP specifications      | **Built-in schema support** for UNTP DPP 0.6.1 with easy version switching                             |
+| Integration with existing systems | **CLI + Python API** for pipelines, CI/CD, and application integration                                 |
+| Custom business rules             | **Plugin system** for domain-specific validators and exporters                                         |
+| Interoperability requirements     | **JSON-LD export** for W3C Verifiable Credentials compliance                                           |
 
 ## Installation
 
@@ -124,29 +124,49 @@ jsonld_output = exporter.export(passport)
 
 ## Features
 
-### Three-Layer Validation Architecture
+### Five-Layer Validation Architecture
 
 ```mermaid
 flowchart TD
-    A[/"📄 Input Data (JSON)"/] --> B
+    subgraph Input
+        A[/"📄 Input Data (JSON)"/]
+    end
 
-    subgraph Layer1["🔷 Layer 1: Schema Validation"]
+    subgraph Layer0["Layer 0: Schema Detection"]
+        A0["Auto-detect schema version<br/>from $schema, @context, type"]
+    end
+
+    subgraph Layer1["Layer 1: Schema Validation"]
         B["JSON Schema Draft 2020-12<br/>Required fields, types, formats"]
     end
 
-    B -->|"SCH001-SCH099"| C
-
-    subgraph Layer2["🔶 Layer 2: Model Validation"]
+    subgraph Layer2["Layer 2: Model Validation"]
         C["Pydantic v2 Models<br/>Type coercion, URL validation"]
     end
 
-    C -->|"MOD001-MOD099"| D
-
-    subgraph Layer3["🟢 Layer 3: Semantic Validation"]
-        D["Business Rules & Vocabularies<br/>ISO codes, date logic, references"]
+    subgraph Layer3["Layer 3: JSON-LD Semantic"]
+        C2["PyLD Expansion<br/>Context resolution, term validation"]
     end
 
-    D -->|"SEM001-SEM099"| E[/"✅ ValidationResult<br/>.valid | .errors | .warnings"/]
+    subgraph Layer4["Layer 4: Business Logic"]
+        D["Business Rules & Vocabularies<br/>ISO codes, date logic, GTIN checksums"]
+    end
+
+    subgraph Layer5["Layer 5: Cryptographic"]
+        E["VC Signature Verification<br/>DID resolution, Ed25519/ECDSA"]
+    end
+
+    subgraph Output
+        F[/"✅ ValidationResult<br/>.valid | .errors | .signature_valid"/]
+    end
+
+    A --> A0
+    A0 --> B
+    B -->|"SCH001-SCH099"| C
+    C -->|"MOD001-MOD099"| C2
+    C2 -->|"JLD001-JLD099"| D
+    D -->|"SEM001-SEM099"| E
+    E -->|"SIG001-SIG099"| F
 ```
 
 ### Selective Layer Validation
@@ -162,18 +182,28 @@ engine = ValidationEngine(layers=["schema"])
 
 # Skip schema, run model + semantic
 engine = ValidationEngine(layers=["model", "semantic"])
+
+# Enable JSON-LD validation
+engine = ValidationEngine(validate_jsonld=True)
+
+# Enable signature verification
+engine = ValidationEngine(verify_signatures=True)
+result = engine.validate(dpp_data)
+if result.signature_valid:
+    print(f"Signed by: {result.issuer_did}")
 ```
 
 ### Performance
 
-| Layer    | Time      | Throughput         |
-| -------- | --------- | ------------------ |
-| Schema   | ~5μs      | 200,000 ops/sec    |
-| Model    | ~8μs      | 125,000 ops/sec    |
-| Semantic | ~3μs      | 333,000 ops/sec    |
-| **All**  | **~13μs** | **80,000 ops/sec** |
+| Layer            | Mean Time | Throughput      |
+| ---------------- | --------- | --------------- |
+| Model (minimal)  | 0.011ms   | 86,988 ops/sec  |
+| Model (full)     | 0.016ms   | 61,848 ops/sec  |
+| Semantic         | 0.005ms   | 193,628 ops/sec |
+| Full (Model+Sem) | 0.017ms   | 58,177 ops/sec  |
+| Engine Creation  | 3.867ms   | 259 ops/sec     |
 
-*Benchmarked on Apple M2, Python 3.12*
+*Benchmarked on Apple Silicon. JSON-LD and signature verification depend on network latency (cached after first request).*
 
 ### Plugin System
 
@@ -212,13 +242,13 @@ engine = ValidationEngine(load_plugins=True)
 
 📚 **Full documentation:** [artiso-ai.github.io/dppvalidator](https://artiso-ai.github.io/dppvalidator/)
 
-| Guide                                                                                     | Description                                |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------ |
-| [Installation](https://artiso-ai.github.io/dppvalidator/getting-started/installation/)    | Setup and CLI extras                       |
-| [Quick Start](https://artiso-ai.github.io/dppvalidator/getting-started/quickstart/)       | Get started in 5 minutes                   |
-| [CLI Reference](https://artiso-ai.github.io/dppvalidator/guides/cli-usage/)               | Command-line interface                     |
-| [Validation Layers](https://artiso-ai.github.io/dppvalidator/concepts/validation-layers/) | Understanding the three-layer architecture |
-| [API Reference](https://artiso-ai.github.io/dppvalidator/reference/api/validators/)       | Complete Python API                        |
+| Guide                                                                                     | Description                               |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [Installation](https://artiso-ai.github.io/dppvalidator/getting-started/installation/)    | Setup and CLI extras                      |
+| [Quick Start](https://artiso-ai.github.io/dppvalidator/getting-started/quickstart/)       | Get started in 5 minutes                  |
+| [CLI Reference](https://artiso-ai.github.io/dppvalidator/guides/cli-usage/)               | Command-line interface                    |
+| [Validation Layers](https://artiso-ai.github.io/dppvalidator/concepts/validation-layers/) | Understanding the five-layer architecture |
+| [API Reference](https://artiso-ai.github.io/dppvalidator/reference/api/validators/)       | Complete Python API                       |
 
 ## Built for Fashion & Textiles
 

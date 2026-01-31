@@ -126,5 +126,5 @@ https://vocabulary.uncefact.org/untp/dpp/0.6.1/schema.json
 
 ## Next Steps
 
-- [Three-Layer Validation](validation-layers.md) — How dppvalidator validates DPPs
+- [Five-Layer Validation](validation-layers.md) — How dppvalidator validates DPPs
 - [Validation Guide](../guides/validation.md) — Using the validation engine

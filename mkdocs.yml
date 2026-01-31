@@ -14,14 +14,14 @@ theme:
   favicon: assets/favicon-32x32.png
   palette:
     - scheme: default
-      primary: teal
-      accent: green
+      primary: grey
+      accent: teal
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: teal
-      accent: light-green
+      primary: grey
+      accent: teal
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -76,6 +76,9 @@ markdown_extensions:
   - def_list
   - pymdownx.tasklist:
       custom_checkbox: true
+
+extra_css:
+  - stylesheets/extra.css
 
 extra:
   analytics:

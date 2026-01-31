@@ -114,7 +114,7 @@ print(jsonld)
 ## Next Steps
 
 - [CLI Usage Guide](../guides/cli-usage.md) — Full CLI reference
-- [Validation Guide](../guides/validation.md) — Understanding the three validation layers
+- [Validation Guide](../guides/validation.md) — Understanding the five validation layers
 - [API Reference](../reference/api/validators.md) — Complete API documentation
 
 ## For AI Assistants
