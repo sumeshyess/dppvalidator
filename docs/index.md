@@ -9,7 +9,6 @@ ______________________________________________________________________
 [![Downloads](https://img.shields.io/pypi/dm/dppvalidator?style=flat&logo=pypi&logoColor=white)](https://pypi.org/project/dppvalidator/)
 [![License](https://img.shields.io/github/license/artiso-ai/dppvalidator?style=flat)](https://github.com/artiso-ai/dppvalidator/blob/main/LICENSE)
 [![CI](https://github.com/artiso-ai/dppvalidator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/artiso-ai/dppvalidator/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/artiso-ai/dppvalidator?style=flat&logo=codecov&logoColor=white)](https://codecov.io/gh/artiso-ai/dppvalidator)
 
 **A Python library for validating Digital Product Passports (DPP) according to EU ESPR regulations and UNTP standards.**
 
