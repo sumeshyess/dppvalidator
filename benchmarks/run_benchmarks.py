@@ -139,7 +139,8 @@ def main() -> int:
 Examples:
   uv run python benchmarks/run_benchmarks.py --all
   uv run python benchmarks/run_benchmarks.py --validation --iterations 5000
-  uv run python benchmarks/run_benchmarks.py --all --json > results.json
+  uv run python benchmarks/run_benchmarks.py --all --json
+  uv run python benchmarks/run_benchmarks.py --output benchmark-results.json
         """,
     )
     parser.add_argument(
@@ -166,7 +167,14 @@ Examples:
     parser.add_argument(
         "--json",
         action="store_true",
-        help="Output results as JSON",
+        help="Output results as JSON to stdout",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        metavar="FILE",
+        help="Save JSON results to file",
     )
 
     args = parser.parse_args()
@@ -182,8 +190,13 @@ Examples:
     print(f"\n  Iterations: {args.iterations}")
 
     if args.all:
-        results = run_all_benchmarks(iterations=args.iterations, output_json=args.json)
-        if args.json:
+        results = run_all_benchmarks(
+            iterations=args.iterations, output_json=args.json or args.output
+        )
+        if args.output:
+            Path(args.output).write_text(json.dumps(results, indent=2), encoding="utf-8")
+            print(f"\n  Results saved to: {args.output}")
+        elif args.json:
             print(json.dumps(results, indent=2))
     elif args.validation:
         run_validation_benchmarks(iterations=args.iterations)
