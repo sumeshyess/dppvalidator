@@ -91,8 +91,9 @@ def _load_input(input_path: str, console: Console) -> dict[str, Any] | None:
     """Load input data from file or stdin."""
     try:
         if input_path == "-":
-            # Ensure UTF-8 encoding for stdin on all platforms
-            sys.stdin.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+            # Ensure UTF-8 encoding for stdin on all platforms (if supported)
+            if hasattr(sys.stdin, "reconfigure"):
+                sys.stdin.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
             content = sys.stdin.read()
         else:
             path = Path(input_path)
