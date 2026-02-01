@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import sys
 from pathlib import Path
@@ -29,7 +30,8 @@ def add_parser(subparsers: Any) -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "input",
-        help="Input file path or '-' for stdin",
+        nargs="+",
+        help="Input file path(s), glob pattern(s), or '-' for stdin",
     )
     parser.add_argument(
         "-s",
@@ -67,8 +69,9 @@ def run(args: argparse.Namespace, console: Console) -> int:
     """Execute validate command."""
     from dppvalidator.validators import ValidationEngine
 
-    data = _load_input(args.input, console)
-    if data is None:
+    # Resolve input patterns to file paths
+    files = _resolve_inputs(args.input, console)
+    if not files:
         return EXIT_ERROR
 
     engine = ValidationEngine(
@@ -76,15 +79,72 @@ def run(args: argparse.Namespace, console: Console) -> int:
         strict_mode=args.strict,
     )
 
-    result = engine.validate(
-        data,
-        fail_fast=args.fail_fast,
-        max_errors=args.max_errors,
-    )
+    all_valid = True
+    has_load_error = False
+    results: list[tuple[str, Any]] = []
 
-    _output_result(result, args.format, args.input, console)
+    for file_path in files:
+        data = _load_input(file_path, console)
+        if data is None:
+            has_load_error = True
+            continue
 
-    return EXIT_VALID if result.valid else EXIT_INVALID
+        result = engine.validate(
+            data,
+            fail_fast=args.fail_fast,
+            max_errors=args.max_errors,
+        )
+        results.append((file_path, result))
+        if not result.valid:
+            all_valid = False
+
+    # If no files were successfully loaded, return error
+    if not results and has_load_error:
+        return EXIT_ERROR
+
+    # Output results
+    if len(results) == 1:
+        _output_result(results[0][1], args.format, results[0][0], console)
+    elif results:
+        _output_batch_results(results, args.format, console)
+
+    # Return error if any file failed to load, invalid if validation failed
+    if has_load_error:
+        return EXIT_ERROR
+    return EXIT_VALID if all_valid else EXIT_INVALID
+
+
+def _resolve_inputs(inputs: list[str], console: Console) -> list[str]:
+    """Resolve input patterns to file paths, expanding globs.
+
+    Cross-platform considerations:
+    - Windows: shell doesn't expand globs, so patterns arrive as-is
+    - Unix: shell may expand globs before reaching Python (if unquoted)
+    - Path separators are normalized for consistent output
+    """
+    files: list[str] = []
+
+    for pattern in inputs:
+        if pattern == "-":
+            files.append("-")
+            continue
+
+        # Normalize path separators for cross-platform glob matching
+        # Windows accepts forward slashes, and glob works better with them
+        normalized_pattern = pattern.replace("\\", "/")
+
+        # Try glob expansion (works on all platforms)
+        expanded = glob.glob(normalized_pattern, recursive=True)
+        if expanded:
+            # Normalize output paths for consistent cross-platform display
+            files.extend(sorted(str(Path(f)) for f in expanded))
+        elif Path(pattern).exists():
+            # Pattern didn't match glob but file exists (exact path)
+            files.append(str(Path(pattern)))
+        else:
+            console.print_error(f"No files match pattern: {pattern}")
+
+    return files
 
 
 def _load_input(input_path: str, console: Console) -> dict[str, Any] | None:
@@ -198,3 +258,61 @@ def _output_table(result: Any, input_path: str, console: Console) -> None:
             issues.add_row("WARNING", warn.code, warn.path, warn.message[:50])
 
         console.print_table(issues)
+
+
+def _output_batch_results(results: list[tuple[str, Any]], fmt: str, console: Console) -> None:
+    """Output results for multiple files."""
+    if fmt == "json":
+        batch_output = {
+            "files": [{"path": path, "result": result.to_dict()} for path, result in results],
+            "summary": {
+                "total": len(results),
+                "valid": sum(1 for _, r in results if r.valid),
+                "invalid": sum(1 for _, r in results if not r.valid),
+            },
+        }
+        print(json.dumps(batch_output, indent=2, default=str))
+        return
+
+    if fmt == "table":
+        _output_batch_table(results, console)
+        return
+
+    # Text format - output each result
+    for path, result in results:
+        _output_text(result, path, console)
+
+    # Summary (use ASCII hyphen for cross-platform compatibility)
+    valid_count = sum(1 for _, r in results if r.valid)
+    invalid_count = len(results) - valid_count
+    console.print(f"\n{'-' * 40}")
+    console.print(f"[bold]Summary:[/bold] {len(results)} files processed")
+    console.print(f"  [green]✓ Valid:[/green] {valid_count}")
+    console.print(f"  [red]✗ Invalid:[/red] {invalid_count}")
+
+
+def _output_batch_table(results: list[tuple[str, Any]], console: Console) -> None:
+    """Output batch results as table."""
+    summary = console.create_table(title="Batch Validation Results")
+    summary.add_column("Status", style="bold")
+    summary.add_column("Path")
+    summary.add_column("Errors", justify="right")
+    summary.add_column("Warnings", justify="right")
+
+    for path, result in results:
+        status = "[green]✓[/green]" if result.valid else "[red]✗[/red]"
+        summary.add_row(
+            status,
+            path,
+            str(result.error_count),
+            str(result.warning_count),
+        )
+
+    console.print_table(summary)
+
+    valid_count = sum(1 for _, r in results if r.valid)
+    console.print(
+        f"\n[bold]Total:[/bold] {len(results)} files | "
+        f"[green]{valid_count} valid[/green] | "
+        f"[red]{len(results) - valid_count} invalid[/red]"
+    )

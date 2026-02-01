@@ -21,17 +21,19 @@ dppvalidator [OPTIONS] COMMAND [ARGS]...
 
 ### validate
 
-Validate a Digital Product Passport.
+Validate one or more Digital Product Passports.
 
 ```
-dppvalidator validate INPUT [OPTIONS]
+dppvalidator validate INPUT... [OPTIONS]
 ```
 
 **Arguments:**
 
-| Argument | Description                        |
-| -------- | ---------------------------------- |
-| INPUT    | Path to JSON file or `-` for stdin |
+| Argument | Description                                                |
+| -------- | ---------------------------------------------------------- |
+| INPUT... | Path(s) to JSON file(s), glob pattern(s), or `-` for stdin |
+
+Supports multiple files and glob patterns for batch validation.
 
 **Options:**
 
@@ -83,12 +85,21 @@ dppvalidator schema [OPTIONS]
 
 ## Examples
 
-```
-# Validate a file
+```bash
+# Validate a single file
 dppvalidator validate passport.json
 
-# Validate with JSON output
-dppvalidator validate passport.json -f json
+# Validate multiple files
+dppvalidator validate passport1.json passport2.json passport3.json
+
+# Validate with glob pattern
+dppvalidator validate "data/passports/*.json"
+
+# Batch validate with strict mode and JSON output
+dppvalidator validate "data/*.json" --strict --format json
+
+# Validate with table output (summary view)
+dppvalidator validate "*.json" --format table
 
 # Export to JSON-LD
 dppvalidator export passport.json -f jsonld -o output.jsonld

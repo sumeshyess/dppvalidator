@@ -10,15 +10,15 @@ The dppvalidator CLI provides commands for validating DPPs, exporting to differe
 
 ### validate
 
-Validate a Digital Product Passport JSON file.
+Validate one or more Digital Product Passport JSON files.
 
 ```
-dppvalidator validate <input> [options]
+dppvalidator validate <input>... [options]
 ```
 
 **Arguments:**
 
-- `input` — Path to JSON file or `-` for stdin
+- `input...` — Path(s) to JSON file(s), glob pattern(s), or `-` for stdin
 
 **Options:**
 
@@ -30,19 +30,36 @@ dppvalidator validate <input> [options]
 
 **Examples:**
 
-```
-# Validate a file
+```bash
+# Validate a single file
 dppvalidator validate passport.json
+
+# Validate multiple files
+dppvalidator validate passport1.json passport2.json passport3.json
+
+# Validate with glob pattern (quote to prevent shell expansion)
+dppvalidator validate "data/passports/*.json"
+
+# Batch validate entire directory
+dppvalidator validate "data/**/*.json" --strict
 
 # Validate from stdin
 cat passport.json | dppvalidator validate -
 
-# JSON output for CI/CD
-dppvalidator validate passport.json --format json
+# JSON output for CI/CD (includes summary for batch)
+dppvalidator validate "*.json" --format json
 
-# Strict mode with custom schema version
-dppvalidator validate passport.json --strict --schema-version 0.6.1
+# Table output for quick overview
+dppvalidator validate "*.json" --format table
 ```
+
+**Batch Output:**
+
+When validating multiple files, the output includes a summary:
+
+- **Text format**: Individual results + summary counts
+- **JSON format**: `{"files": [...], "summary": {"total": N, "valid": N, "invalid": N}}`
+- **Table format**: Status table with error/warning counts per file
 
 ### export
 

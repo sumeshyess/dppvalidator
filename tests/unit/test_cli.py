@@ -281,6 +281,92 @@ class TestValidateCommandExtended:
         result = main(["validate", "-"])
         assert result in (EXIT_VALID, EXIT_INVALID, EXIT_ERROR)
 
+    def test_validate_multiple_files(self, tmp_path):
+        """Test validate with multiple files."""
+        # Create two valid DPP files
+        for i in range(2):
+            file_path = tmp_path / f"passport{i}.json"
+            file_path.write_text(json.dumps(_valid_dpp()), encoding="utf-8")
+
+        result = main(
+            ["validate", str(tmp_path / "passport0.json"), str(tmp_path / "passport1.json")]
+        )
+        assert result == EXIT_VALID
+
+    def test_validate_glob_pattern(self, tmp_path):
+        """Test validate with glob pattern."""
+        # Create multiple DPP files
+        for i in range(3):
+            file_path = tmp_path / f"dpp_{i}.json"
+            file_path.write_text(json.dumps(_valid_dpp()), encoding="utf-8")
+
+        result = main(["validate", str(tmp_path / "dpp_*.json")])
+        assert result == EXIT_VALID
+
+    def test_validate_glob_no_match(self, tmp_path, capsys):
+        """Test validate with glob pattern that matches nothing."""
+        result = main(["validate", str(tmp_path / "nonexistent_*.json")])
+        captured = capsys.readouterr()
+        assert result == EXIT_ERROR
+        assert "No files match" in captured.err
+
+    def test_validate_mixed_valid_invalid(self, tmp_path):
+        """Test validate with mix of valid and invalid files."""
+        # Create one valid file
+        valid_file = tmp_path / "valid.json"
+        valid_file.write_text(json.dumps(_valid_dpp()), encoding="utf-8")
+
+        # Create one invalid file (missing required fields)
+        invalid_file = tmp_path / "invalid.json"
+        invalid_file.write_text(
+            json.dumps({"id": "https://x.com", "issuer": {"id": "https://x.com", "name": "T"}}),
+            encoding="utf-8",
+        )
+
+        result = main(["validate", str(valid_file), str(invalid_file)])
+        assert result == EXIT_INVALID
+
+    def test_validate_batch_json_output(self, tmp_path, capsys):
+        """Test validate batch output in JSON format."""
+        for i in range(2):
+            file_path = tmp_path / f"p{i}.json"
+            file_path.write_text(json.dumps(_valid_dpp()), encoding="utf-8")
+
+        result = main(["validate", str(tmp_path / "p*.json"), "--format", "json"])
+        captured = capsys.readouterr()
+        assert result == EXIT_VALID
+        output = json.loads(captured.out)
+        assert "files" in output
+        assert "summary" in output
+        assert output["summary"]["total"] == 2
+        assert output["summary"]["valid"] == 2
+
+    def test_validate_batch_table_output(self, tmp_path, capsys):
+        """Test validate batch output in table format."""
+        for i in range(2):
+            file_path = tmp_path / f"t{i}.json"
+            file_path.write_text(json.dumps(_valid_dpp()), encoding="utf-8")
+
+        result = main(["validate", str(tmp_path / "t*.json"), "--format", "table"])
+        captured = capsys.readouterr()
+        assert result == EXIT_VALID
+        assert "Batch Validation Results" in captured.out
+        assert "Total:" in captured.out
+
+    def test_validate_glob_with_backslash_path(self, tmp_path):
+        """Test glob pattern with Windows-style backslashes (cross-platform)."""
+        # Create files in a subdirectory
+        subdir = tmp_path / "data"
+        subdir.mkdir()
+        for i in range(2):
+            file_path = subdir / f"win_{i}.json"
+            file_path.write_text(json.dumps(_valid_dpp()), encoding="utf-8")
+
+        # Use backslash path (Windows-style) - should work on all platforms
+        pattern = str(subdir).replace("/", "\\") + "\\win_*.json"
+        result = main(["validate", pattern])
+        assert result == EXIT_VALID
+
 
 class TestExportCommandExtended:
     """Extended tests for export command."""
