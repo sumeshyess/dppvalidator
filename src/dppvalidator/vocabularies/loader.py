@@ -51,7 +51,7 @@ def _load_bundled_vocabulary(name: str) -> frozenset[str]:
     try:
         data_files = _get_data_files()
         data_file = data_files.joinpath(f"{name}.json")
-        content = data_file.read_text()
+        content = data_file.read_text(encoding="utf-8")
         data = json.loads(content)
         return frozenset(data.get("codes", []))
     except (FileNotFoundError, json.JSONDecodeError, OSError) as e:

@@ -85,7 +85,7 @@ class SchemaValidator:
             return self._schema
 
         if self._schema_path:
-            self._schema = json.loads(self._schema_path.read_text())
+            self._schema = json.loads(self._schema_path.read_text(encoding="utf-8"))
         elif self.schema_type == "cirpass":
             self._schema = self._load_cirpass_schema()
         else:
@@ -103,7 +103,7 @@ class SchemaValidator:
             schema_file = resources.files("dppvalidator.schemas.data").joinpath(
                 f"untp-dpp-schema-{self.schema_version}.json"
             )
-            return json.loads(schema_file.read_text())
+            return json.loads(schema_file.read_text(encoding="utf-8"))
         except (FileNotFoundError, ModuleNotFoundError):
             # No bundled schema available - validation will be skipped
             return {}
@@ -121,7 +121,7 @@ class SchemaValidator:
                 schema_file = resources.files("dppvalidator.vocabularies.data.schemas").joinpath(
                     "cirpass_dpp_schema.json"
                 )
-                return json.loads(schema_file.read_text())
+                return json.loads(schema_file.read_text(encoding="utf-8"))
             except (FileNotFoundError, ModuleNotFoundError):
                 return {}
 

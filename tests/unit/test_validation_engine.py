@@ -50,7 +50,7 @@ class TestValidationEngine:
         """Test validating valid fixture."""
         fixture_path = FIXTURES_DIR / "valid" / "minimal_dpp.json"
         if fixture_path.exists():
-            data = json.loads(fixture_path.read_text())
+            data = json.loads(fixture_path.read_text(encoding="utf-8"))
             result = engine.validate(data)
             assert result.valid is True
 
@@ -58,7 +58,7 @@ class TestValidationEngine:
         """Test validating invalid fixture."""
         fixture_path = FIXTURES_DIR / "invalid" / "missing_issuer.json"
         if fixture_path.exists():
-            data = json.loads(fixture_path.read_text())
+            data = json.loads(fixture_path.read_text(encoding="utf-8"))
             result = engine.validate(data)
             assert result.valid is False
 
@@ -66,7 +66,7 @@ class TestValidationEngine:
         """Test validating the official UNTP DPP 0.6.1 example with schema layer only."""
         fixture_path = FIXTURES_DIR / "valid" / "untp-dpp-instance-0.6.1.json"
         assert fixture_path.exists(), "Official UNTP DPP example fixture not found"
-        data = json.loads(fixture_path.read_text())
+        data = json.loads(fixture_path.read_text(encoding="utf-8"))
 
         schema_engine = ValidationEngine(layers=["schema"], schema_version="0.6.1")
         result = schema_engine.validate(data)
@@ -77,7 +77,7 @@ class TestValidationEngine:
         """Test validating the official UNTP DPP 0.6.1 example with full validation."""
         fixture_path = FIXTURES_DIR / "valid" / "untp-dpp-instance-0.6.1.json"
         assert fixture_path.exists(), "Official UNTP DPP example fixture not found"
-        data = json.loads(fixture_path.read_text())
+        data = json.loads(fixture_path.read_text(encoding="utf-8"))
 
         engine = ValidationEngine(schema_version="0.6.1")
         result = engine.validate(data)
@@ -90,7 +90,7 @@ class TestValidationEngine:
         """Test that official UNTP DPP example has expected structure."""
         fixture_path = FIXTURES_DIR / "valid" / "untp-dpp-instance-0.6.1.json"
         assert fixture_path.exists(), "Official UNTP DPP example fixture not found"
-        data = json.loads(fixture_path.read_text())
+        data = json.loads(fixture_path.read_text(encoding="utf-8"))
 
         assert "@context" in data, "Missing @context"
         assert "type" in data, "Missing type"
@@ -107,7 +107,7 @@ class TestValidationEngine:
 
         fixture_path = FIXTURES_DIR / "valid" / "product_passport_instance_0.6.1.json"
         assert fixture_path.exists(), "ProductPassport example fixture not found"
-        data = json.loads(fixture_path.read_text())
+        data = json.loads(fixture_path.read_text(encoding="utf-8"))
 
         assert "type" in data, "Missing type"
         assert "ProductPassport" in data["type"], "Missing ProductPassport type"

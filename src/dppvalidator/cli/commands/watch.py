@@ -314,7 +314,7 @@ def _is_valid_json_file(filepath: Path) -> bool:
     if filepath.suffix.lower() != ".json":
         return False
     try:
-        json.loads(filepath.read_text())
+        json.loads(filepath.read_text(encoding="utf-8"))
         return True
     except (json.JSONDecodeError, OSError):
         return False

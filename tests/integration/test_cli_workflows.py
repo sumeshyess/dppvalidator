@@ -68,7 +68,7 @@ class TestValidateWorkflow:
             },
         }
         file_path = tmp_path / "dpp.json"
-        file_path.write_text(json.dumps(data))
+        file_path.write_text(json.dumps(data), encoding="utf-8")
 
         exit_code = main(["validate", str(file_path)])
 
@@ -87,7 +87,7 @@ class TestExportWorkflow:
 
         assert exit_code == EXIT_VALID
         assert output.exists()
-        content = json.loads(output.read_text())
+        content = json.loads(output.read_text(encoding="utf-8"))
         assert "@context" in content
 
     def test_export_to_json(self, tmp_path):
@@ -132,7 +132,7 @@ class TestInitWorkflow:
 
         assert exit_code == EXIT_VALID
         dpp_file = project_dir / "data" / "sample_passport.json"
-        content = json.loads(dpp_file.read_text())
+        content = json.loads(dpp_file.read_text(encoding="utf-8"))
         assert "materialsProvenance" in content.get("credentialSubject", {})
 
     def test_init_then_validate_workflow(self, tmp_path):
@@ -199,7 +199,7 @@ class TestQuietAndVerboseFlags:
             },
         }
         file_path = tmp_path / "dpp.json"
-        file_path.write_text(json.dumps(data))
+        file_path.write_text(json.dumps(data), encoding="utf-8")
 
         main(["--quiet", "validate", str(file_path)])
         captured = capsys.readouterr()
@@ -226,7 +226,7 @@ class TestQuietAndVerboseFlags:
             },
         }
         file_path = tmp_path / "dpp.json"
-        file_path.write_text(json.dumps(data))
+        file_path.write_text(json.dumps(data), encoding="utf-8")
 
         main(["--verbose", "validate", str(file_path)])
         captured = capsys.readouterr()
@@ -241,7 +241,7 @@ class TestErrorHandling:
     def test_malformed_json_graceful_error(self, tmp_path, capsys):
         """Malformed JSON produces helpful error message."""
         file_path = tmp_path / "bad.json"
-        file_path.write_text("{not valid json")
+        file_path.write_text("{not valid json", encoding="utf-8")
 
         exit_code = main(["validate", str(file_path)])
 
@@ -310,7 +310,7 @@ class TestEndToEndWorkflows:
                 },
             }
             file_path = tmp_path / f"dpp-{i}.json"
-            file_path.write_text(json.dumps(data))
+            file_path.write_text(json.dumps(data), encoding="utf-8")
 
             # Validate each file individually
             exit_code = main(["validate", str(file_path)])

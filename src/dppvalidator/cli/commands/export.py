@@ -102,7 +102,7 @@ def _load_input(input_path: str, console: Console) -> dict[str, Any] | None:
             logger.error("File not found: %s", input_path)
             console.print_error(f"File not found: {input_path}")
             return None
-        content = path.read_text()
+        content = path.read_text(encoding="utf-8")
         return json.loads(content)
 
     except json.JSONDecodeError as e:

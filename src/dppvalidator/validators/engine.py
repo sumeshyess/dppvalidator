@@ -510,7 +510,7 @@ class ValidationEngine:
                     except OSError:
                         pass  # File doesn't exist yet, will be caught below
 
-                return json.loads(data.read_text())
+                return json.loads(data.read_text(encoding="utf-8"))
             except FileNotFoundError:
                 return ValidationResult(
                     valid=False,

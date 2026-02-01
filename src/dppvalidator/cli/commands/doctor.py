@@ -200,7 +200,7 @@ def _check_schema_cache(console: Console) -> tuple[bool, str, bool]:
                 valid_count = 0
                 for sf in schema_files:
                     try:
-                        json.loads(sf.read_text())
+                        json.loads(sf.read_text(encoding="utf-8"))
                         valid_count += 1
                     except (json.JSONDecodeError, OSError):
                         pass

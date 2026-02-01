@@ -88,7 +88,7 @@ class TestSchemaValidatorMoreCoverage:
     def test_schema_validator_custom_path(self, tmp_path):
         """Test SchemaValidator with custom schema path."""
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text('{"type": "object"}')
+        schema_file.write_text('{"type": "object"}', encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({"id": "test"})
@@ -97,7 +97,7 @@ class TestSchemaValidatorMoreCoverage:
     def test_schema_validator_load_schema_cached(self, tmp_path):
         """Test that schema is cached after first load."""
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text('{"type": "object"}')
+        schema_file.write_text('{"type": "object"}', encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         schema1 = validator._load_schema()
@@ -127,7 +127,7 @@ class TestSchemaValidatorWithJsonschema:
             "required": ["name"],
         }
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({"name": "test"})
@@ -142,7 +142,7 @@ class TestSchemaValidatorWithJsonschema:
             "required": ["name"],
         }
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({})
@@ -161,7 +161,7 @@ class TestSchemaValidatorWithJsonschema:
             "required": ["name", "age"],
         }
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({"name": 123, "age": "not a number"})
@@ -172,7 +172,7 @@ class TestSchemaValidatorWithJsonschema:
         """Test error codes are properly formatted with stable codes."""
         schema = {"type": "object", "required": ["a", "b", "c"]}
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({})
@@ -191,7 +191,7 @@ class TestSchemaValidatorWithJsonschema:
         """Test validation time is recorded."""
         schema = {"type": "object"}
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({})
@@ -205,7 +205,7 @@ class TestSchemaValidatorWithJsonschema:
             "additionalProperties": True,
         }
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator_normal = SchemaValidator(schema_path=schema_file, strict=False)
         result_normal = validator_normal.validate({"name": "test", "extra": "field"})
@@ -223,7 +223,7 @@ class TestSchemaValidatorWithJsonschema:
         """Test that 'required' violations always produce SCH001."""
         schema = {"type": "object", "required": ["field_a", "field_b"]}
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({})
@@ -236,7 +236,7 @@ class TestSchemaValidatorWithJsonschema:
         """Test that 'type' violations always produce SCH002."""
         schema = {"type": "object", "properties": {"count": {"type": "integer"}}}
         schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps(schema))
+        schema_file.write_text(json.dumps(schema), encoding="utf-8")
 
         validator = SchemaValidator(schema_path=schema_file)
         result = validator.validate({"count": "not a number"})

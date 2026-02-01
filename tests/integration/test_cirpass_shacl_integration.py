@@ -52,7 +52,7 @@ class TestSHACLValidationBehavior:
     def valid_dpp(self):
         """Load a valid DPP fixture."""
         fixture_path = FIXTURES_DIR / "valid" / "minimal_dpp.json"
-        with open(fixture_path) as f:
+        with open(fixture_path, encoding="utf-8") as f:
             return json.load(f)
 
     def test_shacl_validator_initializes(self):

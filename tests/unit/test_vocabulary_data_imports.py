@@ -43,7 +43,7 @@ class TestBundledJsonFiles:
 
         data_pkg = files("dppvalidator.vocabularies.data")
         countries_file = data_pkg.joinpath("countries.json")
-        content = countries_file.read_text()
+        content = countries_file.read_text(encoding="utf-8")
         data = json.loads(content)
 
         assert isinstance(data, dict)
@@ -55,7 +55,7 @@ class TestBundledJsonFiles:
 
         data_pkg = files("dppvalidator.vocabularies.data")
         units_file = data_pkg.joinpath("units.json")
-        content = units_file.read_text()
+        content = units_file.read_text(encoding="utf-8")
         data = json.loads(content)
 
         assert isinstance(data, (dict, list))
@@ -66,7 +66,7 @@ class TestBundledJsonFiles:
 
         data_pkg = files("dppvalidator.vocabularies.data")
         materials_file = data_pkg.joinpath("materials.json")
-        content = materials_file.read_text()
+        content = materials_file.read_text(encoding="utf-8")
         data = json.loads(content)
 
         assert isinstance(data, (dict, list))
@@ -77,7 +77,7 @@ class TestBundledJsonFiles:
 
         data_pkg = files("dppvalidator.vocabularies.data")
         hs_codes_file = data_pkg.joinpath("hs_codes.json")
-        content = hs_codes_file.read_text()
+        content = hs_codes_file.read_text(encoding="utf-8")
         data = json.loads(content)
 
         assert isinstance(data, (dict, list))
@@ -104,7 +104,7 @@ class TestBundledOntologyFiles:
         ttl_file = ontologies_pkg.joinpath(filename)
 
         # Check file exists and has content
-        content = ttl_file.read_text()
+        content = ttl_file.read_text(encoding="utf-8")
         assert len(content) > 0
         assert "@prefix" in content or "prefix" in content.lower()
 
@@ -118,7 +118,7 @@ class TestBundledSchemaFiles:
 
         schemas_pkg = files("dppvalidator.vocabularies.data.schemas")
         schema_file = schemas_pkg.joinpath("cirpass_dpp_schema.json")
-        content = schema_file.read_text()
+        content = schema_file.read_text(encoding="utf-8")
         data = json.loads(content)
 
         assert isinstance(data, dict)
@@ -130,7 +130,7 @@ class TestBundledSchemaFiles:
 
         schemas_pkg = files("dppvalidator.vocabularies.data.schemas")
         shacl_file = schemas_pkg.joinpath("cirpass_dpp_shacl.ttl")
-        content = shacl_file.read_text()
+        content = shacl_file.read_text(encoding="utf-8")
 
         assert len(content) > 0
         assert "sh:" in content or "shacl" in content.lower() or "@prefix" in content
@@ -141,7 +141,7 @@ class TestBundledSchemaFiles:
 
         schemas_pkg = files("dppvalidator.vocabularies.data.schemas")
         openapi_file = schemas_pkg.joinpath("cirpass_dpp_openapi.json")
-        content = openapi_file.read_text()
+        content = openapi_file.read_text(encoding="utf-8")
         data = json.loads(content)
 
         assert isinstance(data, dict)

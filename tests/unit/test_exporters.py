@@ -380,7 +380,7 @@ class TestExportToFile:
         exporter.export_to_file(passport, output_path)
 
         assert output_path.exists()
-        content = output_path.read_text()
+        content = output_path.read_text(encoding="utf-8")
         data = json.loads(content)
         assert "@context" in data
 
@@ -396,6 +396,6 @@ class TestExportToFile:
         exporter.export_to_file(passport, output_path)
 
         assert output_path.exists()
-        content = output_path.read_text()
+        content = output_path.read_text(encoding="utf-8")
         data = json.loads(content)
         assert "issuer" in data
