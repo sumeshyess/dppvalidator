@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import httpx
+import pytest
 
 from dppvalidator.verifier.did import (
     MULTICODEC_ED25519_PUB,
@@ -474,3 +475,202 @@ class TestModuleFunctions:
 
         assert doc is not None
         assert doc.id == did
+
+
+class TestVerificationMethodKeyTypeEdgeCases:
+    """Tests for VerificationMethod key_type edge cases."""
+
+    def test_jsonwebkey2020_with_ed25519_jwk(self) -> None:
+        """JsonWebKey2020 type with Ed25519 JWK returns Ed25519."""
+        vm = VerificationMethod(
+            id="did:web:example.com#key-1",
+            type="JsonWebKey2020",
+            controller="did:web:example.com",
+            public_key_jwk={"kty": "OKP", "crv": "Ed25519", "x": "abc"},
+        )
+        assert vm.key_type == "Ed25519"
+
+    def test_jsonwebkey2020_with_p256_jwk(self) -> None:
+        """JsonWebKey2020 type with P-256 JWK returns P-256."""
+        vm = VerificationMethod(
+            id="did:web:example.com#key-1",
+            type="JsonWebKey2020",
+            controller="did:web:example.com",
+            public_key_jwk={"kty": "EC", "crv": "P-256", "x": "x", "y": "y"},
+        )
+        assert vm.key_type == "P-256"
+
+    def test_jsonwebkey2020_without_jwk_returns_none(self) -> None:
+        """JsonWebKey2020 without JWK returns None."""
+        vm = VerificationMethod(
+            id="did:web:example.com#key-1",
+            type="JsonWebKey2020",
+            controller="did:web:example.com",
+            public_key_jwk=None,
+        )
+        assert vm.key_type is None
+
+
+class TestDIDDocumentAssertionMethods:
+    """Tests for DIDDocument assertion method handling."""
+
+    def test_get_assertion_methods_with_invalid_reference(self) -> None:
+        """Assertion method reference that doesn't exist is skipped."""
+        vm = VerificationMethod(
+            id="did:web:example.com#key-1",
+            type="Ed25519VerificationKey2020",
+            controller="did:web:example.com",
+        )
+        doc = DIDDocument(
+            id="did:web:example.com",
+            verification_method=[vm],
+            assertion_method=["did:web:example.com#nonexistent"],
+        )
+
+        methods = doc.get_assertion_methods()
+        assert len(methods) == 0
+
+    def test_get_assertion_methods_mixed_valid_invalid(self) -> None:
+        """Mix of valid and invalid assertion method references."""
+        vm = VerificationMethod(
+            id="did:web:example.com#key-1",
+            type="Ed25519VerificationKey2020",
+            controller="did:web:example.com",
+        )
+        doc = DIDDocument(
+            id="did:web:example.com",
+            verification_method=[vm],
+            assertion_method=[
+                "did:web:example.com#key-1",
+                "did:web:example.com#nonexistent",
+            ],
+        )
+
+        methods = doc.get_assertion_methods()
+        assert len(methods) == 1
+        assert methods[0] is vm
+
+
+class TestAsyncDIDResolution:
+    """Tests for async DID resolution methods."""
+
+    @pytest.mark.asyncio
+    async def test_resolve_async_did_key(self) -> None:
+        """Async resolution of did:key works without network."""
+        resolver = DIDResolver()
+        did = "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
+
+        doc = await resolver.resolve_async(did)
+
+        assert doc is not None
+        assert doc.id == did
+        assert len(doc.verification_method) == 1
+
+    @pytest.mark.asyncio
+    async def test_resolve_async_caches_result(self) -> None:
+        """Async resolution caches the result."""
+        resolver = DIDResolver()
+        did = "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
+
+        doc1 = await resolver.resolve_async(did)
+        doc2 = await resolver.resolve_async(did)
+
+        assert doc1 is doc2
+
+    @pytest.mark.asyncio
+    async def test_resolve_async_unsupported_method(self) -> None:
+        """Async resolution of unsupported DID method returns None."""
+        resolver = DIDResolver()
+
+        doc = await resolver.resolve_async("did:ethr:0x123")
+        assert doc is None
+
+    @pytest.mark.asyncio
+    async def test_resolve_async_did_web_network_error(self) -> None:
+        """Async did:web resolution handles network errors."""
+        resolver = DIDResolver()
+
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value.__aenter__ = MagicMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = MagicMock(return_value=None)
+            mock_client.get = MagicMock(side_effect=httpx.RequestError("Network error"))
+
+            doc = await resolver._resolve_did_web_async("did:web:unreachable.com")
+            assert doc is None
+
+    @pytest.mark.asyncio
+    async def test_resolve_async_did_web_success(self) -> None:
+        """Async did:web resolution succeeds with valid response."""
+        from unittest.mock import AsyncMock
+
+        resolver = DIDResolver()
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "id": "did:web:example.com",
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            "verificationMethod": [],
+        }
+        mock_response.raise_for_status = MagicMock()
+
+        mock_client = AsyncMock()
+        mock_client.get.return_value = mock_response
+
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            mock_client_class.return_value.__aexit__.return_value = None
+
+            doc = await resolver._resolve_did_web_async("did:web:example.com")
+
+            assert doc is not None
+            assert doc.id == "did:web:example.com"
+
+    @pytest.mark.asyncio
+    async def test_resolve_async_did_web_with_path(self) -> None:
+        """Async did:web with path constructs correct URL."""
+        from unittest.mock import AsyncMock
+
+        resolver = DIDResolver()
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "id": "did:web:example.com:users:alice",
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            "verificationMethod": [],
+        }
+        mock_response.raise_for_status = MagicMock()
+
+        mock_client = AsyncMock()
+        mock_client.get.return_value = mock_response
+
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            mock_client_class.return_value.__aexit__.return_value = None
+
+            doc = await resolver._resolve_did_web_async("did:web:example.com:users:alice")
+
+            assert doc is not None
+            mock_client.get.assert_called_once_with("https://example.com/users/alice/did.json")
+
+
+class TestDIDKeyExceptionHandling:
+    """Tests for exception handling in did:key resolution."""
+
+    def test_resolve_did_key_exception_returns_none(self) -> None:
+        """Exception during did:key resolution returns None."""
+        resolver = DIDResolver()
+
+        # Mock _decode_base58btc to raise an exception
+        with patch.object(resolver, "_decode_base58btc", side_effect=Exception("Decode error")):
+            doc = resolver._resolve_did_key("did:key:zValidButWillFail")
+            assert doc is None
+
+    def test_resolve_did_key_multicodec_parse_fails(self) -> None:
+        """did:key with unsupported multicodec returns None."""
+        resolver = DIDResolver()
+
+        # Create a valid base58 that decodes to unsupported multicodec
+        with patch.object(resolver, "_decode_base58btc", return_value=b"\xff\xff" + bytes(32)):
+            doc = resolver._resolve_did_key("did:key:zUnknownCodec")
+            assert doc is None

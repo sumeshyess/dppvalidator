@@ -33,8 +33,16 @@ class TestPrecommitCommand:
                         "https://www.w3.org/ns/credentials/v2",
                         "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
                     ],
+                    "type": ["DigitalProductPassport", "VerifiableCredential"],
                     "id": "https://example.com/dpp",
                     "issuer": {"id": "https://example.com/issuer", "name": "Test"},
+                    "validFrom": "2024-01-01T00:00:00Z",
+                    "validUntil": "2034-01-01T00:00:00Z",
+                    "credentialSubject": {
+                        "id": "https://example.com/subject/001",
+                        "type": ["ProductPassport"],
+                        "product": {"id": "https://example.com/products/001", "name": "Test"},
+                    },
                 }
             )
         )
@@ -103,6 +111,41 @@ class TestPrecommitCommand:
 
         result = main(["--fail-on-warning", str(dpp_file)])
         assert result in (0, 1)
+
+    def test_precommit_fail_on_warning_with_warnings(self, tmp_path):
+        """Pre-commit with --fail-on-warning fails when warnings are present."""
+        from unittest.mock import MagicMock, patch
+
+        from dppvalidator.cli.commands.precommit import main
+        from dppvalidator.validators.results import ValidationError, ValidationResult
+
+        dpp_file = tmp_path / "passport.json"
+        dpp_file.write_text(
+            json.dumps({"id": "https://example.com/dpp", "type": ["DigitalProductPassport"]})
+        )
+
+        # Create a mock result that is valid but has warnings
+        mock_result = ValidationResult(
+            valid=True,
+            warnings=[
+                ValidationError(
+                    path="$.field",
+                    message="This is a warning",
+                    code="WARN001",
+                    layer="semantic",
+                    severity="warning",
+                )
+            ],
+            schema_version="0.6.1",
+        )
+
+        with patch("dppvalidator.cli.commands.precommit.ValidationEngine") as mock_engine:
+            mock_instance = MagicMock()
+            mock_instance.validate_file.return_value = mock_result
+            mock_engine.return_value = mock_instance
+
+            result = main(["--fail-on-warning", str(dpp_file)])
+            assert result == 1  # Should fail due to warnings
 
     def test_precommit_multiple_files(self, tmp_path):
         """Pre-commit validates multiple files."""

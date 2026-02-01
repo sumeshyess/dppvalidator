@@ -10,10 +10,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from dppvalidator.validators.protocols import Validator
 from dppvalidator.validators.results import ValidationError, ValidationResult
 
 if TYPE_CHECKING:
     from dppvalidator.models.passport import DigitalProductPassport
+    from dppvalidator.plugins.registry import PluginRegistry
+    from dppvalidator.validators.semantic import SemanticValidator
+    from dppvalidator.verifier.verifier import CredentialVerifier
+    from dppvalidator.vocabularies.loader import VocabularyLoader
 
 
 @dataclass
@@ -77,7 +82,7 @@ class ValidationLayer(ABC):
 class SchemaLayer(ValidationLayer):
     """JSON Schema validation layer."""
 
-    def __init__(self, validator: Any) -> None:
+    def __init__(self, validator: Validator | None) -> None:
         self._validator = validator
 
     @property
@@ -88,13 +93,15 @@ class SchemaLayer(ValidationLayer):
         return self._validator is not None
 
     def execute(self, context: ValidationContext) -> ValidationResult:
+        if self._validator is None:
+            return ValidationResult(valid=True, schema_version=context.schema_version)
         return self._validator.validate(context.parsed_data)
 
 
 class ModelLayer(ValidationLayer):
     """Pydantic model validation layer."""
 
-    def __init__(self, validator: Any) -> None:
+    def __init__(self, validator: Validator | None) -> None:
         self._validator = validator
 
     @property
@@ -105,6 +112,8 @@ class ModelLayer(ValidationLayer):
         return self._validator is not None
 
     def execute(self, context: ValidationContext) -> ValidationResult:
+        if self._validator is None:
+            return ValidationResult(valid=True, schema_version=context.schema_version)
         result = self._validator.validate(context.parsed_data)
         if result.passport is not None:
             context.passport = result.passport
@@ -114,7 +123,7 @@ class ModelLayer(ValidationLayer):
 class SemanticLayer(ValidationLayer):
     """Business rules semantic validation layer."""
 
-    def __init__(self, validator: Any) -> None:
+    def __init__(self, validator: SemanticValidator | None) -> None:
         self._validator = validator
 
     @property
@@ -125,13 +134,15 @@ class SemanticLayer(ValidationLayer):
         return self._validator is not None and context.passport is not None
 
     def execute(self, context: ValidationContext) -> ValidationResult:
+        if self._validator is None or context.passport is None:
+            return ValidationResult(valid=True, schema_version=context.schema_version)
         return self._validator.validate(context.passport)
 
 
 class JsonLdLayer(ValidationLayer):
     """JSON-LD context expansion and term validation layer."""
 
-    def __init__(self, validator: Any) -> None:
+    def __init__(self, validator: Validator | None) -> None:
         self._validator = validator
 
     @property
@@ -142,13 +153,15 @@ class JsonLdLayer(ValidationLayer):
         return self._validator is not None
 
     def execute(self, context: ValidationContext) -> ValidationResult:
+        if self._validator is None:
+            return ValidationResult(valid=True, schema_version=context.schema_version)
         return self._validator.validate(context.parsed_data)
 
 
 class VocabularyLayer(ValidationLayer):
     """External vocabulary validation layer."""
 
-    def __init__(self, loader: Any, schema_version: str) -> None:
+    def __init__(self, loader: VocabularyLoader | None, schema_version: str) -> None:
         self._loader = loader
         self._schema_version = schema_version
 
@@ -169,7 +182,11 @@ class VocabularyLayer(ValidationLayer):
         if passport.credential_subject and passport.credential_subject.materials_provenance:
             for i, material in enumerate(passport.credential_subject.materials_provenance):
                 origin = getattr(material, "origin_country", None)
-                if origin and not self._loader.is_valid_country(origin):
+                if (
+                    origin
+                    and self._loader is not None
+                    and not self._loader.is_valid_country(origin)
+                ):
                     warnings.append(
                         ValidationError(
                             path=f"$.credentialSubject.materialsProvenance[{i}].originCountry",
@@ -188,7 +205,7 @@ class VocabularyLayer(ValidationLayer):
                 for field_name in ["weight", "length", "width", "height", "volume"]:
                     measure = getattr(dims, field_name, None)
                     unit = getattr(measure, "unit", None) if measure else None
-                    if unit and not self._loader.is_valid_unit(unit):
+                    if unit and self._loader is not None and not self._loader.is_valid_unit(unit):
                         warnings.append(
                             ValidationError(
                                 path=f"$.credentialSubject.product.dimensions.{field_name}.unit",
@@ -210,7 +227,7 @@ class VocabularyLayer(ValidationLayer):
 class PluginLayer(ValidationLayer):
     """Plugin validators execution layer."""
 
-    def __init__(self, registry: Any, schema_version: str) -> None:
+    def __init__(self, registry: PluginRegistry | None, schema_version: str) -> None:
         self._registry = registry
         self._schema_version = schema_version
 
@@ -225,6 +242,8 @@ class PluginLayer(ValidationLayer):
         if context.passport is None:
             return ValidationResult(valid=True, schema_version=self._schema_version)
 
+        if self._registry is None:
+            return ValidationResult(valid=True, schema_version=self._schema_version)
         plugin_errors = self._registry.run_all_validators(context.passport)
 
         errors = [e for e in plugin_errors if e.severity == "error"]
@@ -243,7 +262,7 @@ class PluginLayer(ValidationLayer):
 class SignatureLayer(ValidationLayer):
     """Verifiable Credential signature verification layer."""
 
-    def __init__(self, verifier: Any, schema_version: str) -> None:
+    def __init__(self, verifier: CredentialVerifier | None, schema_version: str) -> None:
         self._verifier = verifier
         self._schema_version = schema_version
 
@@ -255,6 +274,8 @@ class SignatureLayer(ValidationLayer):
         return self._verifier is not None
 
     def execute(self, context: ValidationContext) -> ValidationResult:
+        if self._verifier is None:
+            return ValidationResult(valid=True, schema_version=self._schema_version)
         vc_result = self._verifier.verify(context.parsed_data)
 
         errors: list[ValidationError] = []

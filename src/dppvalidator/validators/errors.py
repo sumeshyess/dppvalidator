@@ -109,6 +109,23 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
         "suggestion": "Specify operationalScope with carbonFootprint data.",
         "example": '"operationalScope": "Scope1"',
     },
+    # Plugin errors
+    "PLG001": {
+        "title": "Plugin Execution Failed",
+        "suggestion": "Check plugin implementation for errors or incompatibilities.",
+        "example": None,
+    },
+    # Parse errors (additional)
+    "PRS004": {
+        "title": "Input Size Exceeded",
+        "suggestion": "Reduce input size or split into smaller documents.",
+        "example": None,
+    },
+    "PRS005": {
+        "title": "File Size Exceeded",
+        "suggestion": "Reduce file size or adjust max_input_size limit.",
+        "example": None,
+    },
 }
 
 # Known valid values for "Did you mean?" suggestions

@@ -2,7 +2,19 @@
 
 from __future__ import annotations
 
+import re
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
+
+from dppvalidator.vocabularies.code_lists import (
+    is_valid_hs_code as _is_valid_hs_code,
+)
+from dppvalidator.vocabularies.code_lists import (
+    is_valid_material_code as _is_valid_material_code,
+)
+from dppvalidator.vocabularies.code_lists import (
+    validate_gtin as _validate_gtin,
+)
 
 if TYPE_CHECKING:
     from dppvalidator.models.passport import DigitalProductPassport
@@ -248,10 +260,15 @@ class MaterialCodeRule:
     suggestion: str = "Use a valid UNECE Rec 46 material code"
     docs_url: str = "https://artiso-ai.github.io/dppvalidator/errors/VOC003"
 
+    def __init__(
+        self,
+        material_validator: Callable[[str], bool] | None = None,
+    ) -> None:
+        """Initialize with optional custom validator."""
+        self._is_valid_material_code = material_validator or _is_valid_material_code
+
     def check(self, passport: DigitalProductPassport) -> list[tuple[str, str]]:
         """Check material codes against UNECE Rec 46."""
-        from dppvalidator.vocabularies.code_lists import is_valid_material_code
-
         violations: list[tuple[str, str]] = []
 
         if not passport.credential_subject:
@@ -265,7 +282,7 @@ class MaterialCodeRule:
             # Check material_type.code if present
             if material.material_type and material.material_type.code:
                 code = material.material_type.code
-                if not is_valid_material_code(code):
+                if not self._is_valid_material_code(code):
                     violations.append(
                         (
                             f"$.credentialSubject.materialsProvenance[{i}].materialType.code",
@@ -289,10 +306,15 @@ class HSCodeRule:
     suggestion: str = "Use a valid HS code for textiles (chapters 50-63)"
     docs_url: str = "https://artiso-ai.github.io/dppvalidator/errors/VOC004"
 
+    def __init__(
+        self,
+        hs_validator: Callable[[str], bool] | None = None,
+    ) -> None:
+        """Initialize with optional custom validator."""
+        self._is_valid_hs_code = hs_validator or _is_valid_hs_code
+
     def check(self, passport: DigitalProductPassport) -> list[tuple[str, str]]:
         """Check HS codes for validity."""
-        from dppvalidator.vocabularies.code_lists import is_valid_hs_code
-
         violations: list[tuple[str, str]] = []
 
         if not passport.credential_subject:
@@ -307,7 +329,7 @@ class HSCodeRule:
             for i, classification in enumerate(product.product_category):
                 code = classification.code if classification.code else ""
                 # Only validate if it looks like an HS code (4+ digits)
-                if code.isdigit() and len(code) >= 4 and not is_valid_hs_code(code):
+                if code.isdigit() and len(code) >= 4 and not self._is_valid_hs_code(code):
                     violations.append(
                         (
                             f"$.credentialSubject.product.productCategory[{i}].code",
@@ -331,12 +353,15 @@ class GTINChecksumRule:
     suggestion: str = "Verify the GTIN check digit using GS1 algorithm"
     docs_url: str = "https://artiso-ai.github.io/dppvalidator/errors/VOC005"
 
+    def __init__(
+        self,
+        gtin_validator: Callable[[str], bool] | None = None,
+    ) -> None:
+        """Initialize with optional custom validator."""
+        self._validate_gtin = gtin_validator or _validate_gtin
+
     def check(self, passport: DigitalProductPassport) -> list[tuple[str, str]]:
         """Check GTIN checksums."""
-        import re
-
-        from dppvalidator.vocabularies.code_lists import validate_gtin
-
         violations: list[tuple[str, str]] = []
 
         if not passport.credential_subject:
@@ -354,7 +379,7 @@ class GTINChecksumRule:
                 match = re.search(r"/01/(\d{8,14})", product_id)
                 if match:
                     gtin = match.group(1)
-                    if not validate_gtin(gtin):
+                    if not self._validate_gtin(gtin):
                         violations.append(
                             (
                                 "$.credentialSubject.product.id",
@@ -362,7 +387,7 @@ class GTINChecksumRule:
                             )
                         )
             elif product_id.isdigit() and len(product_id) in (8, 12, 13, 14):
-                if not validate_gtin(product_id):
+                if not self._validate_gtin(product_id):
                     violations.append(
                         (
                             "$.credentialSubject.product.id",

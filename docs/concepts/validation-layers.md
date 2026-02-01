@@ -1,6 +1,6 @@
-# Five-Layer Validation
+# Seven-Layer Validation
 
-dppvalidator uses a five-layer validation architecture to ensure Digital Product Passports are structurally correct, type-safe, semantically meaningful, cryptographically verifiable, and supply-chain traceable.
+dppvalidator uses a seven-layer validation architecture to ensure Digital Product Passports are structurally correct, type-safe, semantically meaningful, cryptographically verifiable, and supply-chain traceable.
 
 ## Architecture
 
@@ -213,13 +213,13 @@ engine = ValidationEngine(
 
 Benchmark results (1000 iterations, Apple Silicon):
 
-| Layer            | Mean Time | Throughput      |
-| ---------------- | --------- | --------------- |
-| Model (minimal)  | 0.011ms   | 86,988 ops/sec  |
-| Model (full)     | 0.016ms   | 61,848 ops/sec  |
-| Semantic         | 0.005ms   | 193,628 ops/sec |
-| Full (Model+Sem) | 0.017ms   | 58,177 ops/sec  |
-| Engine Creation  | 3.867ms   | 259 ops/sec     |
+| Layer            | Mean Time | Throughput        |
+| ---------------- | --------- | ----------------- |
+| Model (minimal)  | 0.012ms   | 84,387 ops/sec    |
+| Model (full)     | 0.016ms   | 63,945 ops/sec    |
+| Semantic         | 0.005ms   | 200,889 ops/sec   |
+| Full (Model+Sem) | 0.022ms   | 45,735 ops/sec    |
+| Engine Creation  | 0.001ms   | 1,524,868 ops/sec |
 
 Run benchmarks: `uv run python -m benchmarks.run_benchmarks --all`
 

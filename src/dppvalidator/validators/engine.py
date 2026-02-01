@@ -1,4 +1,14 @@
-"""Four-layer DPP validation engine."""
+"""Multi-layer DPP validation engine.
+
+Implements seven validation layers:
+1. Schema: JSON Schema validation (Draft 2020-12)
+2. Model: Pydantic model validation
+3. Semantic: Business rule validation
+4. JSON-LD: Context expansion validation
+5. Vocabulary: External vocabulary validation
+6. Plugin: Custom validator plugins
+7. Signature: Verifiable Credential verification
+"""
 
 from __future__ import annotations
 
@@ -25,21 +35,46 @@ from dppvalidator.validators.model import ModelValidator
 from dppvalidator.validators.results import ValidationError, ValidationResult
 from dppvalidator.validators.schema import SchemaValidator
 from dppvalidator.validators.semantic import SemanticValidator
+from dppvalidator.vocabularies.rdf_loader import is_shacl_available
 
 if TYPE_CHECKING:
-    pass
+    from dppvalidator.validators.deep import DeepValidationResult
+
+
+def _is_jsonld_available() -> bool:
+    """Check if JSON-LD dependencies (pyld) are available."""
+    try:
+        import pyld  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
+def _is_crypto_available() -> bool:
+    """Check if cryptography dependencies are available for signature verification."""
+    try:
+        import cryptography  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
 
 logger = get_logger(__name__)
 
 
 class ValidationEngine:
-    """Four-layer validation engine for Digital Product Passports.
+    """Seven-layer validation engine for Digital Product Passports.
 
-    Provides configurable validation through four layers:
+    Provides configurable validation through seven layers:
     1. Schema validation (JSON Schema Draft 2020-12)
     2. Model validation (Pydantic v2)
     3. Semantic validation (Business rules)
     4. JSON-LD validation (Context expansion and term resolution)
+    5. Vocabulary validation (External code lists and ontologies)
+    6. Plugin validation (Custom validator plugins)
+    7. Signature verification (Verifiable Credential proofs)
 
     Following the Result pattern, validation never raises exceptions.
     Check `result.valid` and inspect `result.errors` for details.
@@ -58,6 +93,7 @@ class ValidationEngine:
         verify_signatures: bool = False,
         load_plugins: bool = True,
         max_input_size: int | None = None,
+        enable_shacl: bool = False,
     ) -> None:
         """Initialize the validation engine.
 
@@ -72,14 +108,40 @@ class ValidationEngine:
             load_plugins: If True, discovers and loads plugin validators
             max_input_size: Maximum input size in bytes. None uses default (10MB).
                 Set to 0 to disable size limits.
+            enable_shacl: If True, enables SHACL validation against official
+                CIRPASS-2 shapes. Requires: uv add dppvalidator[rdf] or
+                pip install dppvalidator[rdf]
 
+        Raises:
+            ImportError: If optional features are enabled but dependencies not installed:
+                - enable_shacl=True requires [rdf] extra
+                - validate_jsonld=True requires pyld (included in base install)
+                - verify_signatures=True requires cryptography (included in base install)
         """
+        # Explicit feature detection for optional dependencies
+        if enable_shacl and not is_shacl_available():
+            raise ImportError(
+                "SHACL validation requires the [rdf] extra. "
+                "Install with: uv add dppvalidator[rdf] or pip install dppvalidator[rdf]"
+            )
+
+        if validate_jsonld and not _is_jsonld_available():
+            raise ImportError(
+                "JSON-LD validation requires pyld. Install with: uv add pyld or pip install pyld"
+            )
+
+        if verify_signatures and not _is_crypto_available():
+            raise ImportError(
+                "Signature verification requires cryptography. "
+                "Install with: uv add cryptography or pip install cryptography"
+            )
         self._auto_detect = schema_version == "auto"
         self.schema_version = schema_version
         self.strict_mode = strict_mode
         self.validate_vocabularies = validate_vocabularies
         self.validate_jsonld = validate_jsonld
         self.verify_signatures = verify_signatures
+        self.enable_shacl = enable_shacl
         self.layers = layers or ["schema", "model", "semantic"]
         self._load_plugins = load_plugins
         self.max_input_size = (
@@ -170,11 +232,16 @@ class ValidationEngine:
             )
 
     def _init_plugin_registry(self) -> None:
-        """Initialize the plugin registry for plugin validators."""
-        try:
-            from dppvalidator.plugins.registry import PluginRegistry
+        """Initialize the plugin registry for plugin validators.
 
-            self._plugin_registry = PluginRegistry(auto_discover=True)
+        Uses the singleton registry via get_default_registry() to avoid
+        redundant plugin discovery when multiple ValidationEngine instances
+        are created.
+        """
+        try:
+            from dppvalidator.plugins.registry import get_default_registry
+
+            self._plugin_registry = get_default_registry()
             logger.debug(
                 "Plugin registry initialized with %d validators",
                 self._plugin_registry.validator_count,
@@ -288,13 +355,26 @@ class ValidationEngine:
         return self.validate(Path(path))
 
     async def validate_async(self, data: dict[str, Any]) -> ValidationResult:
-        """Validate data asynchronously.
+        """Validate data asynchronously (thread-offloaded).
+
+        This method wraps the synchronous `validate()` method using
+        `asyncio.to_thread()` to avoid blocking the event loop. Use this
+        for integrating with async frameworks like FastAPI or aiohttp.
+
+        Note:
+            For natively async operations (network I/O), use `validate_deep()`
+            which uses httpx.AsyncClient for non-blocking HTTP requests.
 
         Args:
             data: Raw JSON dict
 
         Returns:
             ValidationResult
+
+        Example:
+            >>> async def handler(request):
+            ...     result = await engine.validate_async(request.json())
+            ...     return {"valid": result.valid}
 
         """
         return await asyncio.to_thread(self.validate, data)
@@ -331,7 +411,7 @@ class ValidationEngine:
         follow_links: list[str] | None = None,
         timeout: float = 30.0,
         auth_header: dict[str, str] | None = None,
-    ) -> Any:
+    ) -> DeepValidationResult:
         """Perform deep/recursive validation following linked documents.
 
         Crawls the supply chain by following links in the DPP and validates
@@ -406,6 +486,30 @@ class ValidationEngine:
 
         if isinstance(data, Path):
             try:
+                # Check file size before reading (DoS protection)
+                if self.max_input_size > 0:
+                    try:
+                        file_size = data.stat().st_size
+                        if file_size > self.max_input_size:
+                            return ValidationResult(
+                                valid=False,
+                                errors=[
+                                    ValidationError(
+                                        path="$",
+                                        message=(
+                                            f"File size ({file_size:,} bytes) exceeds maximum "
+                                            f"allowed ({self.max_input_size:,} bytes)."
+                                        ),
+                                        code="PRS005",
+                                        layer="model",
+                                        severity="error",
+                                    )
+                                ],
+                                schema_version=self.schema_version,
+                            )
+                    except OSError:
+                        pass  # File doesn't exist yet, will be caught below
+
                 return json.loads(data.read_text())
             except FileNotFoundError:
                 return ValidationResult(

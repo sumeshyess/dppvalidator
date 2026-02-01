@@ -54,7 +54,7 @@ dppvalidator export <input> [options]
 
 **Options:**
 
-- `-f, --format` — Output format: `json`, `jsonld` (default: json)
+- `-f, --format` — Output format: `json`, `jsonld` (default: jsonld)
 - `-o, --output` — Output file path (default: stdout)
 
 **Examples:**
@@ -69,25 +69,34 @@ dppvalidator export passport.json --format jsonld -o output.jsonld
 
 ### schema
 
-Display schema information.
+Manage DPP schemas.
 
 ```
-dppvalidator schema [options]
+dppvalidator schema <subcommand> [options]
 ```
 
-**Options:**
+**Subcommands:**
 
-- `--version` — Schema version to display
-- `--list` — List available schema versions
+- `list` — List available schema versions
+- `info` — Show schema information
+- `download` — Download a schema version
+
+**Options (for info/download):**
+
+- `-v, --version` — Schema version (default: 0.6.1)
+- `-o, --output` — Output directory for download
 
 **Examples:**
 
 ```
-# Show current schema
-dppvalidator schema
-
 # List available versions
-dppvalidator schema --list
+dppvalidator schema list
+
+# Show schema info
+dppvalidator schema info -v 0.6.1
+
+# Download schema to local directory
+dppvalidator schema download -v 0.6.1 -o ./schemas/
 ```
 
 ## Exit Codes

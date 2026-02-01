@@ -115,7 +115,8 @@ def _load_input(input_path: str, console: Console) -> dict[str, Any] | None:
 def _output_result(result: Any, fmt: str, input_path: str, console: Console) -> None:
     """Output validation result in specified format."""
     if fmt == "json":
-        console.print(result.to_json())
+        # Use plain print for JSON to avoid Rich formatting/ANSI codes
+        print(result.to_json())
         return
 
     if fmt == "table":

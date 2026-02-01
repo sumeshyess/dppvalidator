@@ -167,7 +167,10 @@ class TestCachingDocumentLoader:
 
     def test_cache_eviction(self) -> None:
         """Old entries are evicted when cache is full."""
-        loader = CachingDocumentLoader(cache_size=2)
+        loader = CachingDocumentLoader(cache_size=5)
+
+        # Clear bundled contexts for clean test
+        loader._cache.clear()
 
         # Fill cache
         loader._cache["url1"] = {"document": {}}

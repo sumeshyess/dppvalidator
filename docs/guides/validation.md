@@ -1,6 +1,6 @@
 # Validation Guide
 
-dppvalidator uses a five-layer validation architecture to ensure Digital Product
+dppvalidator uses a seven-layer validation architecture to ensure Digital Product
 Passports are valid, semantically meaningful, and cryptographically verifiable.
 
 ## Quick Start

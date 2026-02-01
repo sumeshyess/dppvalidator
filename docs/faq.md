@@ -67,7 +67,7 @@ All included by default:
 
 Optional extras:
 
-- **rich** — CLI formatting (install with `pip install dppvalidator[cli]`)
+- **rich** — CLI formatting (install with `uv add "dppvalidator[cli]"` or `pip install "dppvalidator[cli]"`)
 
 ### How fast is validation?
 
@@ -164,7 +164,9 @@ Yes! Add validation to your pipeline:
 # .github/workflows/validate-dpp.yml
 - name: Validate DPP files
   run: |
-    pip install dppvalidator
+    # Using uv (recommended)
+    uv pip install dppvalidator
+    # Or: pip install dppvalidator
     dppvalidator validate data/passports/*.json --strict --format json
 ```
 
@@ -322,9 +324,11 @@ This shouldn't happen with a standard installation since `pyld` is a core
 dependency. Try reinstalling:
 
 ```bash
-pip install --force-reinstall dppvalidator
-# or
+# Using uv (recommended)
 uv sync --reinstall-package dppvalidator
+
+# Or using pip
+pip install --force-reinstall dppvalidator
 ```
 
 ### How do I enable signature verification?

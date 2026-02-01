@@ -1,4 +1,15 @@
-"""Verifiable Credential verification for Digital Product Passports."""
+"""Verifiable Credential verification for Digital Product Passports.
+
+This module provides verification of W3C Verifiable Credentials embedded
+in Digital Product Passports.
+
+Supported Features:
+    - Data Integrity Proofs (Ed25519Signature2020, DataIntegrityProof)
+    - JWS Proofs (JsonWebSignature2020)
+    - JWT Credentials (ES256, ES384, Ed25519)
+    - DID Resolution (did:web, did:key)
+    - URDNA2015 RDF Canonicalization
+"""
 
 from __future__ import annotations
 
@@ -6,6 +17,11 @@ import base64
 import json
 from dataclasses import dataclass, field
 from typing import Any
+
+import base58
+import jwt
+from pyld import jsonld
+from pyld.jsonld import JsonLdError
 
 from dppvalidator.logging import get_logger
 from dppvalidator.verifier.did import DIDResolver
@@ -35,9 +51,16 @@ class CredentialVerifier:
     """Verify Verifiable Credentials in Digital Product Passports.
 
     Supports verification of:
-    - Data Integrity Proofs (embedded proofs)
-    - Enveloped Proofs (JWS/JWT format)
-    - did:web and did:key issuer resolution
+        - Data Integrity Proofs (embedded proofs)
+        - Enveloped Proofs (JWS/JWT format)
+        - did:web and did:key issuer resolution
+
+    Note:
+        JWT credential verification is experimental. For production use,
+        prefer Data Integrity Proofs (Ed25519Signature2020).
+
+        Canonicalization uses simplified JSON sorting. For credentials
+        requiring strict W3C compliance, implement URDNA2015.
     """
 
     def __init__(
@@ -219,7 +242,19 @@ class CredentialVerifier:
         credential: dict[str, Any],
         proof: dict[str, Any],
     ) -> bytes | None:
-        """Create the data to be verified (canonicalized document)."""
+        """Create the data to be verified using URDNA2015 RDF canonicalization.
+
+        Uses pyld's normalize() with URDNA2015 algorithm for W3C Data Integrity
+        compliant canonicalization. Falls back to simplified JSON canonicalization
+        if URDNA2015 fails (e.g., missing @context).
+
+        Args:
+            credential: The credential document (without proof for verification)
+            proof: The proof object (without proofValue)
+
+        Returns:
+            Canonicalized bytes for signature verification, or None on failure
+        """
         try:
             # Remove proof from credential for verification
             cred_copy = {k: v for k, v in credential.items() if k != "proof"}
@@ -227,48 +262,140 @@ class CredentialVerifier:
             # Create proof options (proof without proofValue)
             proof_options = {k: v for k, v in proof.items() if k != "proofValue"}
 
-            # Simple canonicalization (for production, use RDF canonicalization)
-            # This is a simplified version - full implementation would use URDNA2015
-            cred_json = json.dumps(cred_copy, sort_keys=True, separators=(",", ":"))
-            proof_json = json.dumps(proof_options, sort_keys=True, separators=(",", ":"))
+            # Use URDNA2015 RDF canonicalization via pyld
+            try:
+                cred_normalized = jsonld.normalize(
+                    cred_copy,
+                    {"algorithm": "URDNA2015", "format": "application/n-quads"},
+                )
+                proof_normalized = jsonld.normalize(
+                    proof_options,
+                    {"algorithm": "URDNA2015", "format": "application/n-quads"},
+                )
+                return (proof_normalized + cred_normalized).encode("utf-8")
 
-            return (proof_json + cred_json).encode("utf-8")
+            except JsonLdError as e:
+                # Fallback to simplified canonicalization for non-JSON-LD documents
+                logger.debug("URDNA2015 failed, using JSON fallback: %s", e)
+                cred_json = json.dumps(cred_copy, sort_keys=True, separators=(",", ":"))
+                proof_json = json.dumps(proof_options, sort_keys=True, separators=(",", ":"))
+                return (proof_json + cred_json).encode("utf-8")
 
         except Exception as e:
             logger.warning("Failed to create verify data: %s", e)
             return None
 
     def _decode_base58btc(self, encoded: str) -> bytes | None:
-        """Decode a base58btc string."""
-        alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+        """Decode a base58btc string using the base58 library.
+
+        Args:
+            encoded: Base58-encoded string
+
+        Returns:
+            Decoded bytes, or None if decoding fails
+        """
         try:
-            num = 0
-            for char in encoded:
-                num = num * 58 + alphabet.index(char)
-
-            result = []
-            while num > 0:
-                result.append(num % 256)
-                num //= 256
-
-            for char in encoded:
-                if char == "1":
-                    result.append(0)
-                else:
-                    break
-
-            return bytes(reversed(result))
-        except (ValueError, IndexError):
+            return base58.b58decode(encoded)
+        except Exception:
             return None
 
     def _verify_jwt_credential(
         self,
-        _credential: dict[str, Any],
+        credential: dict[str, Any],
         result: VerificationResult,
     ) -> VerificationResult:
-        """Verify a JWT-encoded credential."""
-        result.warnings.append("JWT credential verification not fully implemented")
-        return result
+        """Verify a JWT-encoded credential.
+
+        Supports ES256, ES384, and EdDSA (Ed25519) algorithms.
+        Resolves the issuer DID to obtain the public key for verification.
+
+        Args:
+            credential: The JWT credential containing a 'jwt' field or proof.jwt
+            result: The verification result to update
+
+        Returns:
+            VerificationResult with verification status
+        """
+        try:
+            # Extract JWT token from credential
+            jwt_token = credential.get("jwt")
+            if not jwt_token:
+                proof = credential.get("proof", {})
+                jwt_token = proof.get("jwt") if isinstance(proof, dict) else None
+
+            if not jwt_token:
+                result.errors.append("No JWT token found in credential")
+                result.signature_valid = False
+                return result
+
+            # Decode header to get algorithm and key ID
+            try:
+                header = jwt.get_unverified_header(jwt_token)
+            except jwt.exceptions.DecodeError as e:
+                result.errors.append(f"Invalid JWT format: {e}")
+                result.signature_valid = False
+                return result
+
+            kid = header.get("kid")
+
+            # Extract issuer DID using existing method
+            issuer_did = self._extract_issuer(credential)
+            if not issuer_did:
+                # Try to get issuer from JWT payload
+                try:
+                    unverified = jwt.decode(jwt_token, options={"verify_signature": False})
+                    issuer_did = unverified.get("iss")
+                except Exception:
+                    pass
+
+            if not issuer_did:
+                result.errors.append("Cannot extract issuer DID for JWT verification")
+                result.signature_valid = False
+                return result
+
+            result.issuer_did = issuer_did
+
+            # Resolve DID document
+            doc = self._did_resolver.resolve(issuer_did)
+            if not doc:
+                result.errors.append(f"Failed to resolve issuer DID: {issuer_did}")
+                result.signature_valid = False
+                return result
+
+            # Find verification method
+            vm = None
+            if kid:
+                vm = doc.get_verification_method(kid)
+            if not vm:
+                assertion_methods = doc.get_assertion_methods()
+                vm = assertion_methods[0] if assertion_methods else None
+            if not vm:
+                vm = doc.verification_method[0] if doc.verification_method else None
+
+            if not vm or not vm.public_key_jwk:
+                result.errors.append("No suitable verification method with JWK found")
+                result.signature_valid = False
+                return result
+
+            result.verification_method = vm.id
+
+            # Use verify_jws which handles JWK conversion internally
+            try:
+                valid, _ = verify_jws(jwt_token, vm.public_key_jwk)
+                result.signature_valid = valid
+                if not valid:
+                    result.errors.append("JWT signature verification failed")
+            except Exception as e:
+                result.errors.append(f"JWT signature verification failed: {e}")
+                result.signature_valid = False
+
+            return result
+
+        except Exception as e:
+            logger.warning("JWT credential verification error: %s", e)
+            result.errors.append(f"JWT verification error: {e}")
+            result.signature_valid = False
+            return result
 
 
 def verify_credential(credential: dict[str, Any]) -> VerificationResult:

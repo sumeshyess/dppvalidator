@@ -18,6 +18,18 @@ from dppvalidator.schemas.registry import (
 
 logger = get_logger(__name__)
 
+# Module-level schema cache shared across all SchemaLoader instances
+# This prevents redundant schema loading when multiple ValidationEngine instances are created
+_MODULE_SCHEMA_CACHE: dict[str, dict[str, Any]] = {}
+
+
+def clear_schema_cache() -> None:
+    """Clear the global module-level schema cache.
+
+    Call this to force schema reloading, e.g., after updating schema files.
+    """
+    _MODULE_SCHEMA_CACHE.clear()
+
 
 def _get_schema_data_dir() -> Any:
     """Get the schema data directory using importlib.resources."""
@@ -52,10 +64,11 @@ class SchemaLoader:
         """Load schema for a version.
 
         Attempts loading in order:
-        1. Memory cache
-        2. Bundled local file
-        3. Disk cache
-        4. Remote URL (with caching)
+        1. Module-level cache (shared across instances)
+        2. Instance cache
+        3. Bundled local file
+        4. Disk cache
+        5. Remote URL (with caching)
 
         Args:
             version: Schema version. Uses default if None.
@@ -70,6 +83,11 @@ class SchemaLoader:
         v = version or DEFAULT_SCHEMA_VERSION
         schema_def = self._registry.get_schema(v)
 
+        # Check module-level cache first (shared across instances)
+        if v in _MODULE_SCHEMA_CACHE:
+            return _MODULE_SCHEMA_CACHE[v]
+
+        # Check instance cache
         if v in self._schema_cache:
             return self._schema_cache[v]
 
@@ -82,6 +100,8 @@ class SchemaLoader:
         if schema is None:
             raise RuntimeError(f"Failed to load schema {v}")
 
+        # Store in both module and instance cache
+        _MODULE_SCHEMA_CACHE[v] = schema
         self._schema_cache[v] = schema
         return schema
 

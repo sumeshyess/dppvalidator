@@ -18,8 +18,23 @@ from dppvalidator.validators.results import (
     ValidationException,
     ValidationResult,
 )
-from dppvalidator.validators.schema import SchemaValidator
+from dppvalidator.validators.schema import SchemaType, SchemaValidator
 from dppvalidator.validators.semantic import SemanticValidator
+from dppvalidator.validators.shacl import (
+    CIRPASS_SHAPES,
+    OfficialSHACLLoader,
+    RDFSHACLValidator,
+    SHACLNodeShape,
+    SHACLPropertyShape,
+    SHACLSeverity,
+    SHACLValidationResult,
+    SHACLValidator,
+    get_cirpass_shapes,
+    is_shacl_validation_available,
+    load_official_shacl_shapes,
+    validate_jsonld_with_official_shacl,
+    validate_with_shacl,
+)
 
 __all__ = [
     # Detection
@@ -32,6 +47,7 @@ __all__ = [
     "ValidationError",
     "ValidationException",
     # Validators
+    "SchemaType",
     "SchemaValidator",
     "ModelValidator",
     "SemanticValidator",
@@ -45,4 +61,19 @@ __all__ = [
     "Validator",
     "AsyncValidator",
     "SemanticRule",
+    # SHACL validation
+    "SHACLValidator",
+    "SHACLValidationResult",
+    "SHACLNodeShape",
+    "SHACLPropertyShape",
+    "SHACLSeverity",
+    "CIRPASS_SHAPES",
+    "get_cirpass_shapes",
+    "validate_with_shacl",
+    # Official SHACL (Phase 8)
+    "OfficialSHACLLoader",
+    "RDFSHACLValidator",
+    "is_shacl_validation_available",
+    "load_official_shacl_shapes",
+    "validate_jsonld_with_official_shacl",
 ]

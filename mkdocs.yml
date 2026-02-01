@@ -133,6 +133,7 @@ nav:
       - Validation: guides/validation.md
       - Use Cases: guides/use-cases.md
       - JSON-LD Export: guides/jsonld.md
+      - EU DPP Export: guides/eudpp-export.md
       - Plugin Development: guides/plugins.md
   - Reference:
       - CLI Reference: reference/cli.md
@@ -144,12 +145,77 @@ nav:
   - Concepts:
       - UNTP DPP Schema: concepts/untp-schema.md
       - Five-Layer Validation: concepts/validation-layers.md
+      - EU DPP Ontology Alignment: concepts/eudpp-ontology-alignment.md
+      - CIRPASS-2 Implementation: concepts/cirpass-implementation.md
   - Contributing:
       - Development Setup: contributing/development-setup.md
       - Code Style: contributing/code-style.md
       - Testing: contributing/testing.md
   - Errors:
       - Overview: errors/index.md
+      - Schema Errors:
+          - SCH001 - Schema Not Loaded: errors/SCH001.md
+          - SCH002 - Type Mismatch: errors/SCH002.md
+          - SCH003 - Invalid Enum Value: errors/SCH003.md
+          - SCH004 - Invalid Format: errors/SCH004.md
+          - SCH005 - Pattern Mismatch: errors/SCH005.md
+          - SCH006 - String Too Short: errors/SCH006.md
+          - SCH007 - String Too Long: errors/SCH007.md
+          - SCH008 - Value Below Minimum: errors/SCH008.md
+          - SCH009 - Value Above Maximum: errors/SCH009.md
+          - SCH010 - Additional Properties: errors/SCH010.md
+          - SCH011 - Too Few Items: errors/SCH011.md
+          - SCH012 - Too Many Items: errors/SCH012.md
+          - SCH013 - Duplicate Items: errors/SCH013.md
+          - SCH014 - Const Mismatch: errors/SCH014.md
+          - SCH015 - AllOf Violation: errors/SCH015.md
+          - SCH016 - AnyOf Violation: errors/SCH016.md
+          - SCH017 - OneOf Violation: errors/SCH017.md
+          - SCH018 - Not Violation: errors/SCH018.md
+          - SCH019 - Contains Violation: errors/SCH019.md
+          - SCH020 - PrefixItems Violation: errors/SCH020.md
+          - SCH021 - Reference Resolution: errors/SCH021.md
+          - SCH099 - Unknown Schema Error: errors/SCH099.md
+      - Parsing Errors:
+          - PRS001 - File Not Found: errors/PRS001.md
+          - PRS002 - Invalid JSON: errors/PRS002.md
+          - PRS003 - Unsupported Input Type: errors/PRS003.md
+          - PRS004 - Input Too Large: errors/PRS004.md
+          - PRS005 - File Size Exceeded: errors/PRS005.md
+      - Model Errors:
+          - MDL001 - Model Validation Failed: errors/MDL001.md
+          - MDL002 - Invalid URL Format: errors/MDL002.md
+          - MDL003 - Invalid DateTime Format: errors/MDL003.md
+          - MDL010 - Invalid Issuer: errors/MDL010.md
+          - MDL011 - Invalid Issuer ID: errors/MDL011.md
+          - MDL012 - Invalid Issuer Name: errors/MDL012.md
+          - MDL013 - Invalid Issuer Type: errors/MDL013.md
+          - MDL014 - Invalid Issuer Location: errors/MDL014.md
+          - MDL015 - Invalid Issuer Identifier: errors/MDL015.md
+          - MDL016 - Invalid Identifier Scheme: errors/MDL016.md
+          - MDL020 - Invalid Credential Subject: errors/MDL020.md
+          - MDL021 - Invalid Credential Subject ID: errors/MDL021.md
+          - MDL022 - Invalid Credential Subject Type: errors/MDL022.md
+          - MDL030 - Invalid Product: errors/MDL030.md
+          - MDL031 - Invalid Product ID: errors/MDL031.md
+          - MDL032 - Invalid Product Name: errors/MDL032.md
+          - MDL033 - Invalid Product Category: errors/MDL033.md
+          - MDL040 - Invalid Material: errors/MDL040.md
+          - MDL041 - Invalid Material Name: errors/MDL041.md
+          - MDL042 - Invalid Material Fraction: errors/MDL042.md
+          - MDL050 - Invalid Claim: errors/MDL050.md
+          - MDL051 - Invalid Claim Type: errors/MDL051.md
+          - MDL052 - Invalid Claim Topic: errors/MDL052.md
+          - MDL053 - Invalid Claim Assessment: errors/MDL053.md
+          - MDL060 - Invalid Traceability: errors/MDL060.md
+          - MDL061 - Invalid Traceability Event: errors/MDL061.md
+          - MDL070 - Invalid Circularity: errors/MDL070.md
+          - MDL071 - Invalid Circularity Content: errors/MDL071.md
+          - MDL080 - Invalid Emission: errors/MDL080.md
+          - MDL081 - Invalid Emission Value: errors/MDL081.md
+          - MDL090 - Invalid Facility: errors/MDL090.md
+          - MDL091 - Invalid Facility Location: errors/MDL091.md
+          - MDL099 - Unknown Model Error: errors/MDL099.md
       - JSON-LD Errors:
           - JLD001 - Missing Context: errors/JLD001.md
           - JLD002 - Undefined Terms: errors/JLD002.md
@@ -164,8 +230,23 @@ nav:
           - SEM006 - Item-Level Serial Number: errors/SEM006.md
           - SEM007 - Operational Scope: errors/SEM007.md
       - Vocabulary Errors:
+          - VOC001 - Invalid Country Code: errors/VOC001.md
+          - VOC002 - Invalid Unit Code: errors/VOC002.md
           - VOC003 - UNECE Material Code: errors/VOC003.md
           - VOC004 - HS Code Validation: errors/VOC004.md
           - VOC005 - GTIN Checksum: errors/VOC005.md
+      - CIRPASS Errors:
+          - CQ001 - Missing Mandatory Attributes: errors/CQ001.md
+          - CQ004 - Missing CAS Number: errors/CQ004.md
+          - CQ011 - Missing Operator ID: errors/CQ011.md
+          - CQ016 - Missing Validity Period: errors/CQ016.md
+          - CQ017 - Granularity Mismatch: errors/CQ017.md
+          - CQ020 - Missing Weight/Volume: errors/CQ020.md
+      - Textile Errors:
+          - TXT001 - Invalid Textile HS Code: errors/TXT001.md
+          - TXT002 - Missing Material Composition: errors/TXT002.md
+          - TXT003 - Missing Microplastic Data: errors/TXT003.md
+          - TXT004 - Missing Durability Info: errors/TXT004.md
+          - TXT005 - Missing Care Instructions: errors/TXT005.md
   - FAQ: faq.md
   - Changelog: changelog.md

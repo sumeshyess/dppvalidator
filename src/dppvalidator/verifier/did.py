@@ -6,6 +6,7 @@ import base64
 from dataclasses import dataclass, field
 from typing import Any
 
+import base58
 import httpx
 
 from dppvalidator.logging import get_logger
@@ -247,47 +248,29 @@ class DIDResolver:
         return None
 
     def _decode_base58btc(self, encoded: str) -> bytes | None:
-        """Decode a base58btc string."""
-        alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+        """Decode a base58btc string using the base58 library.
+
+        Args:
+            encoded: Base58-encoded string
+
+        Returns:
+            Decoded bytes, or None if decoding fails
+        """
         try:
-            num = 0
-            for char in encoded:
-                num = num * 58 + alphabet.index(char)
-
-            # Convert to bytes
-            result = []
-            while num > 0:
-                result.append(num % 256)
-                num //= 256
-
-            # Handle leading zeros
-            for char in encoded:
-                if char == "1":
-                    result.append(0)
-                else:
-                    break
-
-            return bytes(reversed(result))
-        except (ValueError, IndexError):
+            return base58.b58decode(encoded)
+        except (ValueError, Exception):
             return None
 
     def _encode_base58btc(self, data: bytes) -> str:
-        """Encode bytes as base58btc."""
-        alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-        num = int.from_bytes(data, "big")
-        result = []
-        while num > 0:
-            num, rem = divmod(num, 58)
-            result.append(alphabet[rem])
+        """Encode bytes as base58btc using the base58 library.
 
-        # Handle leading zeros
-        for byte in data:
-            if byte == 0:
-                result.append("1")
-            else:
-                break
+        Args:
+            data: Bytes to encode
 
-        return "".join(reversed(result))
+        Returns:
+            Base58-encoded string
+        """
+        return base58.b58encode(data).decode("ascii")
 
     def _parse_did_document(self, data: dict[str, Any]) -> DIDDocument:
         """Parse a DID document from JSON."""
@@ -321,6 +304,64 @@ class DIDResolver:
     def clear_cache(self) -> None:
         """Clear the DID document cache."""
         self._cache.clear()
+
+    async def resolve_async(self, did: str) -> DIDDocument | None:
+        """Resolve a DID asynchronously.
+
+        Async variant of resolve() that uses httpx.AsyncClient for network
+        operations. Useful when called from async contexts to avoid blocking.
+
+        Args:
+            did: The DID to resolve (e.g., "did:web:example.com" or "did:key:z...")
+
+        Returns:
+            DIDDocument or None if resolution fails
+        """
+        if did in self._cache:
+            return self._cache[did]
+
+        if did.startswith("did:web:"):
+            doc = await self._resolve_did_web_async(did)
+        elif did.startswith("did:key:"):
+            # did:key is self-describing, no network needed
+            doc = self._resolve_did_key(did)
+        else:
+            logger.warning(
+                "Unsupported DID method: %s", did.split(":")[1] if ":" in did else "unknown"
+            )
+            return None
+
+        if doc and len(self._cache) < self.cache_size:
+            self._cache[did] = doc
+
+        return doc
+
+    async def _resolve_did_web_async(self, did: str) -> DIDDocument | None:
+        """Resolve a did:web identifier asynchronously.
+
+        did:web:example.com -> https://example.com/.well-known/did.json
+        did:web:example.com:path:to:doc -> https://example.com/path/to/doc/did.json
+        """
+        try:
+            parts = did[8:].split(":")
+            domain = parts[0].replace("%3A", ":")
+
+            if len(parts) > 1:
+                path = "/".join(parts[1:])
+                url = f"https://{domain}/{path}/did.json"
+            else:
+                url = f"https://{domain}/.well-known/did.json"
+
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                data = response.json()
+
+            return self._parse_did_document(data)
+
+        except Exception as e:
+            logger.warning("Failed to resolve did:web async %s: %s", did, e)
+            return None
 
 
 # Module-level resolver instance

@@ -162,15 +162,17 @@ class TestVocabularyModuleExports:
     """Tests for vocabulary module exports."""
 
     def test_code_lists_exported(self) -> None:
-        """Code list functions are exported from vocabularies module."""
+        """Code list functions are exported from vocabularies.code_lists submodule."""
         from dppvalidator.vocabularies import (
+            is_valid_hs_code,
+            is_valid_material_code,
+            validate_gtin,
+        )
+        from dppvalidator.vocabularies.code_lists import (
             get_hs_codes,
             get_material_codes,
             is_textile_hs_code,
             is_valid_gs1_digital_link,
-            is_valid_hs_code,
-            is_valid_material_code,
-            validate_gtin,
         )
 
         assert callable(get_material_codes)
@@ -205,3 +207,79 @@ class TestValidationRulesExported:
         assert MaterialCodeRule.rule_id == "VOC003"
         assert HSCodeRule.rule_id == "VOC004"
         assert GTINChecksumRule.rule_id == "VOC005"
+
+
+class TestCodeListErrorHandling:
+    """Tests for error handling in code list loading."""
+
+    def test_load_code_list_file_not_found(self) -> None:
+        """Missing code list file returns empty frozenset."""
+        from unittest.mock import MagicMock, patch
+
+        from dppvalidator.vocabularies.code_lists import _load_code_list
+
+        mock_data_files = MagicMock()
+        mock_path = MagicMock()
+        mock_path.read_text.side_effect = FileNotFoundError("File not found")
+        mock_data_files.joinpath.return_value = mock_path
+
+        with patch(
+            "dppvalidator.vocabularies.code_lists._get_data_files",
+            return_value=mock_data_files,
+        ):
+            result = _load_code_list("nonexistent")
+
+        assert result == frozenset()
+
+    def test_load_code_list_invalid_json(self) -> None:
+        """Invalid JSON in code list file returns empty frozenset."""
+        from unittest.mock import MagicMock, patch
+
+        from dppvalidator.vocabularies.code_lists import _load_code_list
+
+        mock_data_files = MagicMock()
+        mock_path = MagicMock()
+        mock_path.read_text.return_value = "{ invalid json }"
+        mock_data_files.joinpath.return_value = mock_path
+
+        with patch(
+            "dppvalidator.vocabularies.code_lists._get_data_files",
+            return_value=mock_data_files,
+        ):
+            result = _load_code_list("invalid")
+
+        assert result == frozenset()
+
+
+class TestTextileHSCodeEdgeCases:
+    """Tests for edge cases in textile HS code validation."""
+
+    def test_empty_code_returns_false(self) -> None:
+        """Empty code returns False."""
+        assert is_textile_hs_code("") is False
+
+    def test_single_char_returns_false(self) -> None:
+        """Single character code returns False."""
+        assert is_textile_hs_code("5") is False
+
+    def test_non_numeric_chapter_returns_false(self) -> None:
+        """Non-numeric chapter code returns False."""
+        assert is_textile_hs_code("AB01") is False
+        assert is_textile_hs_code("XX") is False
+
+
+class TestHSChapterDescriptionEdgeCases:
+    """Tests for edge cases in HS chapter description."""
+
+    def test_empty_code_returns_none(self) -> None:
+        """Empty code returns None."""
+        assert get_hs_chapter_description("") is None
+
+    def test_single_char_returns_none(self) -> None:
+        """Single character code returns None."""
+        assert get_hs_chapter_description("5") is None
+
+    def test_unknown_chapter_returns_none(self) -> None:
+        """Unknown chapter returns None."""
+        assert get_hs_chapter_description("9901") is None
+        assert get_hs_chapter_description("0100") is None

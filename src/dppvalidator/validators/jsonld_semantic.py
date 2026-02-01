@@ -21,6 +21,46 @@ UNTP_CONTEXT_PATTERNS = (
     "w3.org/ns/credentials",
 )
 
+# Pre-bundled W3C VC v2 context to avoid network fetch
+# This is the minimal subset needed for DPP validation
+_BUNDLED_VC_V2_CONTEXT = {
+    "@context": {
+        "@protected": True,
+        "id": "@id",
+        "type": "@type",
+        "VerifiableCredential": {
+            "@id": "https://www.w3.org/2018/credentials#VerifiableCredential",
+            "@context": {
+                "@protected": True,
+                "id": "@id",
+                "type": "@type",
+                "credentialSubject": {
+                    "@id": "https://www.w3.org/2018/credentials#credentialSubject"
+                },
+                "issuer": {"@id": "https://www.w3.org/2018/credentials#issuer", "@type": "@id"},
+                "validFrom": {
+                    "@id": "https://www.w3.org/2018/credentials#validFrom",
+                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+                },
+                "validUntil": {
+                    "@id": "https://www.w3.org/2018/credentials#validUntil",
+                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+                },
+                "proof": {
+                    "@id": "https://w3id.org/security#proof",
+                    "@type": "@id",
+                    "@container": "@graph",
+                },
+            },
+        },
+    }
+}
+
+# URLs that map to bundled contexts
+BUNDLED_CONTEXT_URLS = {
+    "https://www.w3.org/ns/credentials/v2": _BUNDLED_VC_V2_CONTEXT,
+}
+
 
 class CachingDocumentLoader:
     """Document loader with LRU caching for remote contexts.
@@ -37,7 +77,11 @@ class CachingDocumentLoader:
         """
         self._cache_size = cache_size
         self._timeout = timeout
-        self._cache: dict[str, dict[str, Any]] = {}
+        # Pre-populate cache with bundled contexts
+        self._cache: dict[str, dict[str, Any]] = {
+            url: {"document": ctx, "documentUrl": url, "contextUrl": None}
+            for url, ctx in BUNDLED_CONTEXT_URLS.items()
+        }
 
     def __call__(self, url: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         """Load a remote document, using cache if available.

@@ -31,13 +31,13 @@ ______________________________________________________________________
 
 ## Why dppvalidator?
 
-| Challenge                         | Solution                                                                                               |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Complex JSON Schema validation    | **Five-layer validation** catches errors at schema, model, JSON-LD, semantic, and cryptographic levels |
-| Evolving UNTP specifications      | **Built-in schema support** for UNTP DPP 0.6.1 with easy version switching                             |
-| Integration with existing systems | **CLI + Python API** for pipelines, CI/CD, and application integration                                 |
-| Custom business rules             | **Plugin system** for domain-specific validators and exporters                                         |
-| Interoperability requirements     | **JSON-LD export** for W3C Verifiable Credentials compliance                                           |
+| Challenge                         | Solution                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Complex JSON Schema validation    | **Seven-layer validation** catches errors at schema, model, semantic, JSON-LD, vocabulary, plugin, and signature levels |
+| Evolving UNTP specifications      | **Built-in schema support** for UNTP DPP 0.6.1 with easy version switching                                              |
+| Integration with existing systems | **CLI + Python API** for pipelines, CI/CD, and application integration                                                  |
+| Custom business rules             | **Plugin system** for domain-specific validators and exporters                                                          |
+| Interoperability requirements     | **JSON-LD export** for W3C Verifiable Credentials compliance                                                            |
 
 ## Installation
 
@@ -45,12 +45,57 @@ ______________________________________________________________________
 # Using uv (recommended)
 uv add dppvalidator
 
-# Using pip
-pip install dppvalidator
-
 # With CLI extras (rich formatting)
-pip install dppvalidator[cli]
+uv add "dppvalidator[cli]"
+
+# Or using pip
+pip install dppvalidator
+pip install "dppvalidator[cli]"  # with CLI extras
 ```
+
+### Optional Features
+
+#### RDF/SHACL Validation
+
+For SHACL validation against official CIRPASS-2 shapes:
+
+```bash
+# Using uv (recommended)
+uv add "dppvalidator[rdf]"
+
+# Or using pip
+pip install "dppvalidator[rdf]"
+```
+
+```python
+from dppvalidator.validators import ValidationEngine
+
+# Enable SHACL validation (requires [rdf] extra)
+engine = ValidationEngine(enable_shacl=True)
+result = engine.validate(dpp_data)
+```
+
+#### JSON-LD Semantic Validation
+
+JSON-LD validation is included by default (via `pyld`):
+
+```python
+engine = ValidationEngine(validate_jsonld=True)
+result = engine.validate(dpp_data)
+```
+
+#### Signature Verification
+
+Signature verification is included by default (via `cryptography`):
+
+```python
+engine = ValidationEngine(verify_signatures=True)
+result = engine.validate(dpp_data)
+```
+
+> **Note:** `pyld` and `cryptography` are core dependencies installed automatically.
+> Only `[rdf]` (for SHACL via rdflib/pyshacl) and `[cli]` (for rich formatting)
+> are true optional extras.
 
 **Requirements:** Python 3.10+
 
@@ -124,7 +169,7 @@ jsonld_output = exporter.export(passport)
 
 ## Features
 
-### Five-Layer Validation Architecture
+### Seven-Layer Validation Architecture
 
 ```mermaid
 flowchart TD
@@ -195,15 +240,15 @@ if result.signature_valid:
 
 ### Performance
 
-| Layer            | Mean Time | Throughput      |
-| ---------------- | --------- | --------------- |
-| Model (minimal)  | 0.011ms   | 86,988 ops/sec  |
-| Model (full)     | 0.016ms   | 61,848 ops/sec  |
-| Semantic         | 0.005ms   | 193,628 ops/sec |
-| Full (Model+Sem) | 0.017ms   | 58,177 ops/sec  |
-| Engine Creation  | 3.867ms   | 259 ops/sec     |
+| Layer            | Mean Time | Throughput        |
+| ---------------- | --------- | ----------------- |
+| Model (minimal)  | 0.012ms   | 84,387 ops/sec    |
+| Model (full)     | 0.016ms   | 63,945 ops/sec    |
+| Semantic         | 0.005ms   | 200,889 ops/sec   |
+| Full (Model+Sem) | 0.022ms   | 45,735 ops/sec    |
+| Engine Creation  | 0.001ms   | 1,524,868 ops/sec |
 
-*Benchmarked on Apple Silicon. JSON-LD and signature verification depend on network latency (cached after first request).*
+*Benchmarked on Apple Silicon (M-series). JSON-LD and signature verification depend on network latency (cached after first request).*
 
 ### Plugin System
 
@@ -238,17 +283,44 @@ registry.register_validator("textile", TextileFiberRule)
 engine = ValidationEngine(load_plugins=True)
 ```
 
+## EU DPP & CIRPASS-2 Support
+
+dppvalidator includes full support for the **EU DPP Core Ontology** from CIRPASS-2:
+
+```python
+from dppvalidator.validators import SchemaValidator
+from dppvalidator.exporters import EUDPPJsonLDExporter
+
+# Dual-mode validation: UNTP (default) or EU DPP
+validator = SchemaValidator(schema_type="cirpass")
+result = validator.validate(dpp_data)
+
+# Export to EU DPP-aligned JSON-LD
+exporter = EUDPPJsonLDExporter(map_terms=True)
+jsonld = exporter.export(passport)
+```
+
+| Feature                  | Description                                                              |
+| ------------------------ | ------------------------------------------------------------------------ |
+| **Dual-mode validation** | Switch between UNTP and CIRPASS schemas                                  |
+| **EU DPP vocabulary**    | 24 actor/role classes, 16 PEF categories                                 |
+| **JSON-LD export**       | EU DPP-aligned output with term mapping                                  |
+| **SHACL validation**     | Optional RDF-based validation (requires `pip install dppvalidator[rdf]`) |
+
+> 🏆 **Aligned with [dpp.vocabulary-hub.eu/specifications](https://dpp.vocabulary-hub.eu/specifications)** as of 2025-02-01. To our knowledge, dppvalidator is the most comprehensive open-source Python package for EU DPP vocabulary compliance.
+
 ## Documentation
 
 📚 **Full documentation:** [artiso-ai.github.io/dppvalidator](https://artiso-ai.github.io/dppvalidator/)
 
-| Guide                                                                                     | Description                               |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------- |
-| [Installation](https://artiso-ai.github.io/dppvalidator/getting-started/installation/)    | Setup and CLI extras                      |
-| [Quick Start](https://artiso-ai.github.io/dppvalidator/getting-started/quickstart/)       | Get started in 5 minutes                  |
-| [CLI Reference](https://artiso-ai.github.io/dppvalidator/guides/cli-usage/)               | Command-line interface                    |
-| [Validation Layers](https://artiso-ai.github.io/dppvalidator/concepts/validation-layers/) | Understanding the five-layer architecture |
-| [API Reference](https://artiso-ai.github.io/dppvalidator/reference/api/validators/)       | Complete Python API                       |
+| Guide                                                                                              | Description                               |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [Installation](https://artiso-ai.github.io/dppvalidator/getting-started/installation/)             | Setup and CLI extras                      |
+| [Quick Start](https://artiso-ai.github.io/dppvalidator/getting-started/quickstart/)                | Get started in 5 minutes                  |
+| [CLI Reference](https://artiso-ai.github.io/dppvalidator/guides/cli-usage/)                        | Command-line interface                    |
+| [Validation Layers](https://artiso-ai.github.io/dppvalidator/concepts/validation-layers/)          | Understanding the five-layer architecture |
+| [CIRPASS-2 Integration](https://artiso-ai.github.io/dppvalidator/concepts/cirpass-implementation/) | EU DPP ontology alignment                 |
+| [API Reference](https://artiso-ai.github.io/dppvalidator/reference/api/validators/)                | Complete Python API                       |
 
 ## Built for Fashion & Textiles
 
@@ -308,6 +380,31 @@ def validate_supplier_submission(dpp_json: dict) -> bool:
 - [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) — Credential format standard
 
 > ⚠️ **Note on UNTP Specification:** The UNTP Digital Product Passport specification is under active development and not yet ready for production implementation. We track the latest maintained releases and will update dppvalidator as the specification stabilizes. See the [UNTP releases page](https://untp.unece.org/docs/specification/DigitalProductPassport/) for current status.
+
+## Known Limitations
+
+### Signature Verification
+
+| Feature               | Status          | Recommendation                    |
+| --------------------- | --------------- | --------------------------------- |
+| Data Integrity Proofs | ✅ Supported    | Use for production                |
+| JWS Proofs            | ✅ Supported    | Use for production                |
+| JWT Credentials       | ⚠️ Experimental | Use Data Integrity Proofs instead |
+
+**JWT Credentials:** JWT-encoded Verifiable Credentials are not fully verified. The library will issue a warning but not perform cryptographic verification. For production deployments, use embedded Data Integrity Proofs (Ed25519Signature2020).
+
+### Canonicalization
+
+The signature verification uses **simplified JSON canonicalization** (sorted keys) rather than full [URDNA2015](https://www.w3.org/TR/rdf-canon/) RDF canonicalization. This may cause verification failures for credentials signed with strict W3C Data Integrity canonicalization.
+
+For production deployments requiring full W3C VC compliance:
+
+```python
+# Future: Use pyld for URDNA2015 canonicalization
+from pyld import jsonld
+
+normalized = jsonld.normalize(credential, {"algorithm": "URDNA2015"})
+```
 
 ## Contributing
 

@@ -16,8 +16,13 @@ dppvalidator is the open-source compliance engine for EU Digital Product Passpor
 ## Installation
 
 ```bash
-pip install dppvalidator          # Full functionality
-pip install dppvalidator[cli]     # With rich CLI formatting
+# Using uv (recommended)
+uv add dppvalidator               # Full functionality
+uv add "dppvalidator[cli]"        # With rich CLI formatting
+
+# Or using pip
+pip install dppvalidator
+pip install "dppvalidator[cli]"
 ```
 
 ## Architecture

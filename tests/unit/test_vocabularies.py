@@ -4,12 +4,11 @@ import time
 
 import pytest
 
-from dppvalidator.vocabularies import (
+from dppvalidator.vocabularies import VocabularyCache, VocabularyLoader
+from dppvalidator.vocabularies.cache import CacheEntry
+from dppvalidator.vocabularies.loader import (
     VOCABULARIES,
-    CacheEntry,
-    VocabularyCache,
     VocabularyDefinition,
-    VocabularyLoader,
     get_bundled_country_codes,
     get_bundled_unit_codes,
 )

@@ -20,20 +20,9 @@ class TestValidationEngine:
         """Create validation engine (model + semantic only for unit tests)."""
         return ValidationEngine(schema_version="0.6.1", layers=["model", "semantic"])
 
-    def test_validate_minimal_valid_dpp(self, engine: ValidationEngine):
+    def test_validate_minimal_valid_dpp(self, engine: ValidationEngine, valid_dpp_data: dict):
         """Test validating a minimal valid DPP."""
-        data = {
-            "@context": [
-                "https://www.w3.org/ns/credentials/v2",
-                "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
-            ],
-            "id": "https://example.com/credentials/dpp-001",
-            "issuer": {
-                "id": "https://example.com/issuers/001",
-                "name": "Example Company Ltd",
-            },
-        }
-        result = engine.validate(data)
+        result = engine.validate(valid_dpp_data)
         assert result.valid is True
 
     def test_validate_missing_issuer(self, engine: ValidationEngine):
@@ -139,20 +128,10 @@ class TestValidationEngineExtended:
         """Create validation engine (model + semantic only)."""
         return ValidationEngine(schema_version="0.6.1", layers=["model", "semantic"])
 
-    def test_validate_file(self, engine: ValidationEngine):
+    def test_validate_file(self, engine: ValidationEngine, valid_dpp_data: dict):
         """Test validate_file method."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(
-                {
-                    "@context": [
-                        "https://www.w3.org/ns/credentials/v2",
-                        "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
-                    ],
-                    "id": "https://example.com/dpp",
-                    "issuer": {"id": "https://example.com/issuer", "name": "Test"},
-                },
-                f,
-            )
+            json.dump(valid_dpp_data, f)
             f.flush()
             result = engine.validate_file(f.name)
             assert result.valid is True
@@ -178,38 +157,18 @@ class TestValidationEngineExtended:
         assert result.valid is False
         assert any("Invalid JSON" in e.message for e in result.errors)
 
-    def test_validate_async(self, engine: ValidationEngine):
+    def test_validate_async(self, engine: ValidationEngine, valid_dpp_data: dict):
         """Test async validation."""
-        data = {
-            "@context": [
-                "https://www.w3.org/ns/credentials/v2",
-                "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
-            ],
-            "id": "https://example.com/dpp",
-            "issuer": {"id": "https://example.com/issuer", "name": "Test"},
-        }
-        result = asyncio.run(engine.validate_async(data))
+        result = asyncio.run(engine.validate_async(valid_dpp_data))
         assert result.valid is True
 
-    def test_validate_batch(self, engine: ValidationEngine):
+    def test_validate_batch(self, engine: ValidationEngine, valid_dpp_data: dict):
         """Test batch validation."""
-        ctx = [
-            "https://www.w3.org/ns/credentials/v2",
-            "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
-        ]
-        items = [
-            {
-                "@context": ctx,
-                "id": "https://example.com/dpp1",
-                "issuer": {"id": "https://a.com", "name": "A"},
-            },
-            {
-                "@context": ctx,
-                "id": "https://example.com/dpp2",
-                "issuer": {"id": "https://b.com", "name": "B"},
-            },
-        ]
-        results = asyncio.run(engine.validate_batch(items, concurrency=2))
+        item1 = valid_dpp_data.copy()
+        item1["id"] = "https://example.com/dpp1"
+        item2 = valid_dpp_data.copy()
+        item2["id"] = "https://example.com/dpp2"
+        results = asyncio.run(engine.validate_batch([item1, item2], concurrency=2))
         assert len(results) == 2
         assert all(r.valid for r in results)
 
@@ -285,30 +244,23 @@ class TestEngineFullCoverage:
 class TestValidationEngineBehavior:
     """Behavior tests for ValidationEngine."""
 
-    def test_engine_validates_real_dpp_structure(self):
+    def test_engine_validates_real_dpp_structure(self, valid_dpp_data: dict):
         """Test engine validates a complete DPP with all components."""
         engine = ValidationEngine(schema_version="0.6.1", layers=["model", "semantic"])
-        data = {
-            "@context": [
-                "https://www.w3.org/ns/credentials/v2",
-                "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
+        # Extend valid_dpp_data with additional fields
+        data = valid_dpp_data.copy()
+        data["credentialSubject"] = {
+            "id": "https://example.com/products/001",
+            "type": ["Product"],
+            "product": {
+                "id": "https://example.com/product/001",
+                "name": "Test Product",
+                "serialNumber": "SN-001",
+            },
+            "materialsProvenance": [
+                {"name": "Steel", "massFraction": 0.6},
+                {"name": "Plastic", "massFraction": 0.4},
             ],
-            "id": "https://example.com/dpp/001",
-            "issuer": {
-                "id": "https://example.com/issuer",
-                "name": "Test Corporation",
-            },
-            "credentialSubject": {
-                "product": {
-                    "id": "https://example.com/product/001",
-                    "name": "Test Product",
-                    "serialNumber": "SN-001",
-                },
-                "materialsProvenance": [
-                    {"name": "Steel", "massFraction": 0.6},
-                    {"name": "Plastic", "massFraction": 0.4},
-                ],
-            },
         }
         result = engine.validate(data)
         assert result.valid is True
@@ -362,18 +314,10 @@ class TestValidationEngineEdgeCases:
         result = engine.validate({"id": "test"})
         assert result is not None
 
-    def test_validate_dict_input(self):
+    def test_validate_dict_input(self, valid_dpp_data: dict):
         """Test validation accepts dict input directly."""
         engine = ValidationEngine(layers=["model", "semantic"])
-        data = {
-            "@context": [
-                "https://www.w3.org/ns/credentials/v2",
-                "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
-            ],
-            "id": "https://example.com/dpp",
-            "issuer": {"id": "https://a.com", "name": "Test"},
-        }
-        result = engine.validate(data)
+        result = engine.validate(valid_dpp_data)
         assert result.valid is True
 
     def test_validate_path_input_invalid_path(self):
@@ -447,19 +391,10 @@ class TestPhase3InputSizeLimits:
         assert result.errors[0].code == "PRS004"
         assert "exceeds maximum" in result.errors[0].message
 
-    def test_input_within_size_limit_passes(self):
+    def test_input_within_size_limit_passes(self, valid_dpp_data: dict):
         """Test that input within size limit is processed normally."""
         engine = ValidationEngine(max_input_size=10000, layers=["model", "semantic"])
-        small_input = json.dumps(
-            {
-                "@context": [
-                    "https://www.w3.org/ns/credentials/v2",
-                    "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
-                ],
-                "id": "https://example.com/dpp",
-                "issuer": {"id": "https://example.com/issuer", "name": "Test"},
-            }
-        )
+        small_input = json.dumps(valid_dpp_data)
 
         result = engine.validate(small_input)
         assert result.valid is True

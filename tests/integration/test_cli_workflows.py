@@ -52,12 +52,20 @@ class TestValidateWorkflow:
     def test_validate_single_file_workflow(self, tmp_path):
         """Validating a single file through the CLI."""
         data = {
+            "type": ["DigitalProductPassport", "VerifiableCredential"],
             "@context": [
                 "https://www.w3.org/ns/credentials/v2",
                 "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
             ],
             "id": "https://example.com/dpp",
             "issuer": {"id": "https://example.com/issuer", "name": "Test"},
+            "validFrom": "2024-01-01T00:00:00Z",
+            "validUntil": "2034-01-01T00:00:00Z",
+            "credentialSubject": {
+                "id": "https://example.com/subject/001",
+                "type": ["ProductPassport"],
+                "product": {"id": "https://example.com/products/001", "name": "Test Product"},
+            },
         }
         file_path = tmp_path / "dpp.json"
         file_path.write_text(json.dumps(data))
@@ -175,12 +183,20 @@ class TestQuietAndVerboseFlags:
     def test_quiet_mode_minimal_output(self, tmp_path, capsys):
         """Quiet mode produces minimal output."""
         data = {
+            "type": ["DigitalProductPassport", "VerifiableCredential"],
             "@context": [
                 "https://www.w3.org/ns/credentials/v2",
                 "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
             ],
             "id": "https://example.com/dpp",
             "issuer": {"id": "https://example.com/issuer", "name": "Test"},
+            "validFrom": "2024-01-01T00:00:00Z",
+            "validUntil": "2034-01-01T00:00:00Z",
+            "credentialSubject": {
+                "id": "https://example.com/subject/001",
+                "type": ["ProductPassport"],
+                "product": {"id": "https://example.com/products/001", "name": "Test Product"},
+            },
         }
         file_path = tmp_path / "dpp.json"
         file_path.write_text(json.dumps(data))
@@ -194,12 +210,20 @@ class TestQuietAndVerboseFlags:
     def test_verbose_mode_detailed_output(self, tmp_path, capsys):
         """Verbose mode produces detailed output."""
         data = {
+            "type": ["DigitalProductPassport", "VerifiableCredential"],
             "@context": [
                 "https://www.w3.org/ns/credentials/v2",
                 "https://test.uncefact.org/vocabulary/untp/dpp/0.6.1/",
             ],
             "id": "https://example.com/dpp",
             "issuer": {"id": "https://example.com/issuer", "name": "Test"},
+            "validFrom": "2024-01-01T00:00:00Z",
+            "validUntil": "2034-01-01T00:00:00Z",
+            "credentialSubject": {
+                "id": "https://example.com/subject/001",
+                "type": ["ProductPassport"],
+                "product": {"id": "https://example.com/products/001", "name": "Test Product"},
+            },
         }
         file_path = tmp_path / "dpp.json"
         file_path.write_text(json.dumps(data))
@@ -270,9 +294,20 @@ class TestEndToEndWorkflows:
         # Create multiple DPP files and validate each
         for i in range(3):
             data = {
+                "type": ["DigitalProductPassport", "VerifiableCredential"],
                 "@context": ctx,
                 "id": f"https://example.com/dpp-{i}",
                 "issuer": {"id": "https://example.com/issuer", "name": f"Issuer {i}"},
+                "validFrom": "2024-01-01T00:00:00Z",
+                "validUntil": "2034-01-01T00:00:00Z",
+                "credentialSubject": {
+                    "id": f"https://example.com/subject/{i}",
+                    "type": ["ProductPassport"],
+                    "product": {
+                        "id": f"https://example.com/products/{i}",
+                        "name": f"Product {i}",
+                    },
+                },
             }
             file_path = tmp_path / f"dpp-{i}.json"
             file_path.write_text(json.dumps(data))

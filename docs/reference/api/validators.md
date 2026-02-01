@@ -4,7 +4,7 @@ Validation engine and result types for DPP validation.
 
 ## ValidationEngine
 
-The main validation engine supporting five-layer validation.
+The main validation engine supporting seven-layer validation.
 
 ::: dppvalidator.validators.ValidationEngine
 options:
@@ -59,13 +59,44 @@ print(f"Validation time: {result.validation_time_ms:.2f}ms")
 
 ## Validation Layers
 
-| Layer    | Description                |
-| -------- | -------------------------- |
-| schema   | JSON Schema validation     |
-| model    | Pydantic model validation  |
-| jsonld   | JSON-LD context validation |
-| semantic | Business rule validation   |
-| crypto   | Signature verification     |
+The engine supports seven validation layers:
+
+| Layer      | Description                              |
+| ---------- | ---------------------------------------- |
+| schema     | JSON Schema validation (Draft 2020-12)   |
+| model      | Pydantic model validation                |
+| semantic   | Business rule validation                 |
+| jsonld     | JSON-LD context expansion and validation |
+| vocabulary | External vocabulary validation           |
+| plugin     | Custom plugin validators                 |
+| signature  | Verifiable Credential signatures         |
+
+## Performance Features
+
+### Module-Level Schema Caching
+
+Schemas are cached at the module level for better performance:
+
+```python
+from dppvalidator.schemas.loader import clear_schema_cache
+
+# Clear cache if needed (e.g., after updating schema files)
+clear_schema_cache()
+```
+
+### Plugin Registry Singleton
+
+The plugin registry uses a singleton pattern:
+
+```python
+from dppvalidator.plugins.registry import get_default_registry, reset_default_registry
+
+# Get the shared registry
+registry = get_default_registry()
+
+# Reset for testing
+reset_default_registry()
+```
 
 ## Error Codes
 
@@ -78,3 +109,5 @@ print(f"Validation time: {result.validation_time_ms:.2f}ms")
 | SEM001 | semantic | Invalid vocabulary value |
 | SEM002 | semantic | Invalid date range       |
 | SIG001 | crypto   | Invalid signature        |
+
+> **Note:** This table shows common examples. See [Error Reference](../errors/) for the complete list of 70+ error codes.
