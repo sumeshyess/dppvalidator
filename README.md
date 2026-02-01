@@ -389,13 +389,13 @@ def validate_supplier_submission(dpp_json: dict) -> bool:
 
 ### Signature Verification
 
-| Feature               | Status          | Recommendation                    |
-| --------------------- | --------------- | --------------------------------- |
-| Data Integrity Proofs | ✅ Supported    | Use for production                |
-| JWS Proofs            | ✅ Supported    | Use for production                |
-| JWT Credentials       | ⚠️ Experimental | Use Data Integrity Proofs instead |
+| Feature               | Status       | Recommendation                          |
+| --------------------- | ------------ | --------------------------------------- |
+| Data Integrity Proofs | ✅ Supported | Use for production                      |
+| JWS Proofs            | ✅ Supported | Use for production                      |
+| JWT Credentials       | ✅ Supported | Full verification (ES256, ES384, EdDSA) |
 
-**JWT Credentials:** JWT-encoded Verifiable Credentials are not fully verified. The library will issue a warning but not perform cryptographic verification. For production deployments, use embedded Data Integrity Proofs (Ed25519Signature2020).
+**JWT Credentials:** JWT-encoded Verifiable Credentials are fully verified via DID resolution and cryptographic signature verification. Supported algorithms include ES256, ES384, and EdDSA (Ed25519). For maximum interoperability, Data Integrity Proofs are recommended.
 
 ### Canonicalization
 
