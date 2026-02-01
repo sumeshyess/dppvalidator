@@ -1,6 +1,6 @@
 ______________________________________________________________________
 
-## description: Validate EU Digital Product Passports with Python. 80k ops/sec.
+## Validate EU Digital Product Passports with Python - 80k ops/sec.
 
 # dppvalidator
 
